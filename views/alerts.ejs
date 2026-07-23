@@ -1,0 +1,70 @@
+<%- include('partials/head') %>
+
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">Alerty</h1>
+    <p class="text-secondary mb-0 small">
+      Monitoring nowych zgłoszeń w EUIPO po elemencie słownym — sprawdzanie przynajmniej raz na dobę.
+    </p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <form id="alertForm" class="nrn-panel">
+      <h2 class="h6 text-uppercase text-secondary mb-3">Nowy alert</h2>
+
+      <div class="mb-3">
+        <label class="form-label" for="alertApi">Rejestr</label>
+        <select class="form-select" id="alertApi">
+          <option value="trademark">Znaki towarowe</option>
+          <option value="design">Wzory przemysłowe</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="alertPattern">Wzorzec elementu słownego</label>
+        <input type="text" class="form-control font-mono" id="alertPattern"
+               placeholder="*konop*" required maxlength="100">
+        <div class="form-text">
+          <code>*</code> zastępuje dowolny ciąg znaków — np. <code>*konop*</code>
+          znajdzie „Konopka", „BIOKONOPIA" itd.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="alertName">Nazwa alertu <span class="text-secondary">(opcjonalna)</span></label>
+        <input type="text" class="form-control" id="alertName" maxlength="120"
+               placeholder="np. Moja marka">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Wygenerowane zapytanie RSQL</label>
+        <div class="nrn-query-preview font-mono small" id="alertQueryPreview">—</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" id="alertSubmit">
+        <i class="bi bi-bell-fill me-1"></i> Utwórz alert i pobierz stan początkowy
+      </button>
+    </form>
+
+    <div class="nrn-panel mt-3 small text-secondary">
+      <h2 class="h6 text-uppercase text-secondary mb-2">Jak to działa</h2>
+      <ol class="mb-0 ps-3">
+        <li>Przy utworzeniu alert pobiera wszystkie pasujące rekordy z EUIPO (stan zastany).</li>
+        <li>Co najmniej raz na dobę zapytanie jest ponawiane.</li>
+        <li>Wpisy, których nie było w stanie zastanym, dostają oznaczenie <span class="badge text-bg-danger">NOWY</span>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div id="alertsList" class="vstack gap-3">
+      <div class="nrn-panel text-secondary">Wczytuję alerty…</div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="<%= base %>/static/js/alerts.js?v=<%= v %>"></script>
+
+<%- include('partials/foot') %>

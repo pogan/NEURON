@@ -1,0 +1,58 @@
+<%- include('partials/head') %>
+
+<h1 class="h3 mb-4">Historia zapytań</h1>
+
+<div class="row g-3 mb-4">
+  <% stats.forEach(function (s) { %>
+    <div class="col-sm-6 col-lg-4">
+      <div class="nrn-stat">
+        <div class="nrn-stat-label">
+          <%= s.api === 'design' ? 'Wzory' : 'Znaki towarowe' %>
+          <span class="badge <%= s.environment === 'sandbox' ? 'text-bg-warning' : 'text-bg-secondary' %>"><%= s.environment || 'production' %></span>
+        </div>
+        <div class="nrn-stat-value"><%= s.calls %></div>
+        <div class="small text-secondary">błędy: <%= s.errors %> · średnio <%= s.avg_ms ?? '—' %> ms</div>
+      </div>
+    </div>
+  <% }); %>
+  <% if (!stats.length) { %>
+    <div class="col-12"><p class="text-secondary">Brak zarejestrowanych zapytań.</p></div>
+  <% } %>
+</div>
+
+<div class="nrn-panel">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Czas (UTC)</th><th>API</th><th>Śr.</th><th>Endpoint</th><th>Parametry</th>
+          <th class="text-end">Status</th><th class="text-end">Czas</th><th class="text-end">Wyników</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% logs.forEach(function (log) { %>
+          <tr>
+            <td class="text-nowrap small"><%= log.created_at %></td>
+            <td><span class="badge text-bg-secondary"><%= log.api %></span></td>
+            <td><span class="badge <%= log.environment === 'sandbox' ? 'text-bg-warning' : 'text-bg-dark' %>"><%= (log.environment || 'prod').slice(0, 4) %></span></td>
+            <td class="font-mono small"><%= log.endpoint %></td>
+            <td class="font-mono small text-secondary nrn-truncate" title="<%= log.params || '' %>"><%= log.params || '—' %></td>
+            <td class="text-end">
+              <span class="badge <%= log.status >= 400 || !log.status ? 'text-bg-danger' : 'text-bg-success' %>"><%= log.status || 'ERR' %></span>
+            </td>
+            <td class="text-end small"><%= log.duration_ms ?? '—' %> ms</td>
+            <td class="text-end small"><%= log.total_elements ?? '—' %></td>
+          </tr>
+          <% if (log.error) { %>
+            <tr><td colspan="8" class="small text-danger pt-0"><i class="bi bi-exclamation-triangle me-1"></i><%= log.error %></td></tr>
+          <% } %>
+        <% }); %>
+        <% if (!logs.length) { %>
+          <tr><td colspan="8" class="text-secondary">Brak wpisów.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/foot') %>

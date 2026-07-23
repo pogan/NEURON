@@ -1,0 +1,69 @@
+<%- include('partials/head') %>
+
+<div class="nrn-hero mb-5">
+  <h1 class="display-6 fw-semibold mb-2">NEURON</h1>
+  <p class="lead text-secondary mb-0">
+    Interfejs do publicznych API Urzędu Unii Europejskiej ds. Własności Intelektualnej.
+    Przeszukuj rejestry unijnych znaków towarowych i wzorów przemysłowych.
+  </p>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <a class="card nrn-card h-100 text-decoration-none" href="<%= base %>/trademarks">
+      <div class="card-body">
+        <div class="nrn-card-icon"><i class="bi bi-tag"></i></div>
+        <h2 class="h5 mt-3">Znaki towarowe</h2>
+        <p class="text-secondary mb-3">
+          Wyszukiwanie RSQL, szczegóły zgłoszenia, obrazy, dźwięk, wideo i modele 3D znaku.
+        </p>
+        <code class="small">GET /trademark-search/trademarks</code>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-6">
+    <a class="card nrn-card h-100 text-decoration-none" href="<%= base %>/designs">
+      <div class="card-body">
+        <div class="nrn-card-icon"><i class="bi bi-bounding-box"></i></div>
+        <h2 class="h5 mt-3">Wzory przemysłowe</h2>
+        <p class="text-secondary mb-3">
+          Wyszukiwanie RSQL, szczegóły wzoru, widoki 1–10, miniatury, wideo i modele 3D.
+        </p>
+        <code class="small">GET /design-search/designs</code>
+      </div>
+    </a>
+  </div>
+</div>
+
+<h2 class="h6 text-uppercase text-secondary mt-5 mb-3">Stan usługi</h2>
+<div class="row g-3" id="statsRow">
+  <div class="col-sm-6 col-lg-4">
+    <div class="nrn-stat">
+      <div class="nrn-stat-label">Token OAuth2</div>
+      <div class="nrn-stat-value" id="statToken">—</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-8">
+    <div class="nrn-stat">
+      <div class="nrn-stat-label">Środowisko EUIPO</div>
+      <div class="nrn-stat-value">
+        <%= env === 'sandbox' ? 'Sandbox' : 'Produkcja' %>
+        <% if (env === 'sandbox') { %><span class="badge text-bg-warning align-middle">test</span><% } %>
+      </div>
+      <div class="small text-secondary mt-1">
+        API: <code><%= apiHost %></code><br>
+        Autoryzacja: <code><%= tokenUrl %></code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (env === 'sandbox') { %>
+  <div class="alert alert-warning mt-3 small mb-0">
+    <i class="bi bi-info-circle me-1"></i>
+    Sandbox zwraca dane testowe, nie rzeczywisty rejestr EUIPO.
+    Aby przełączyć na produkcję, ustaw <code>ENV=production</code> w pliku <code>.env</code> i zrestartuj aplikację.
+  </div>
+<% } %>
+
+<%- include('partials/foot') %>
