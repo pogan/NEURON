@@ -8,10 +8,10 @@ module.exports = {
       exec_mode: 'fork',
       autorestart: true,
       max_memory_restart: '300M',
+      // HOST i PORT zostawiamy `.env` — pm2 ustawiłby je w process.env,
+      // a dotenv nie nadpisuje istniejących zmiennych (kolizje portów na VPS).
       env: {
         NODE_ENV: 'production',
-        HOST: '127.0.0.1',
-        PORT: 3000,
       },
       error_file: 'logs/neuron-error.log',
       out_file: 'logs/neuron-out.log',
