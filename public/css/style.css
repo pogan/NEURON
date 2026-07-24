@@ -110,11 +110,42 @@ code, pre, .font-mono, .nrn-json {
 
 .nrn-example { font-size: .8125rem; }
 
+/* --- panel filtrów nad wynikami --- */
+
+.nrn-filters-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+
+.nrn-filters .form-label {
+  font-size: .8125rem;
+  margin-bottom: .25rem;
+}
+
+/* Długie listy słownikowe (typy PWP, kolekcje) nie mogą rozpychać panelu. */
+.nrn-filter-scroll {
+  max-height: 9.5rem;
+  overflow: auto;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  padding: .5rem .6rem;
+}
+
 /* --- wyniki --- */
 
 .nrn-result {
   max-height: 70vh;
   overflow: auto;
+}
+
+/* Lista wyników z rozwijanymi szczegółami rośnie w dół — bez wewnętrznego scrolla. */
+.nrn-result-flow {
+  max-height: none;
+  overflow: visible;
 }
 
 .nrn-json {
@@ -156,6 +187,35 @@ code, pre, .font-mono, .nrn-json {
 }
 
 .nrn-hit:hover { border-color: var(--bs-primary); }
+
+.nrn-hit:focus-visible {
+  outline: none;
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25);
+}
+
+/* --- wynik z rozwiniętymi szczegółami --- */
+
+.nrn-hit-group.open .nrn-hit {
+  border-color: var(--bs-primary);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.nrn-hit-group.open .nrn-hit .nrn-chevron { transform: rotate(180deg); }
+
+.nrn-hit-detail {
+  border: 1px solid var(--bs-primary);
+  border-top: 0;
+  border-radius: 0 0 var(--nrn-radius) var(--nrn-radius);
+  padding: .85rem;
+}
+
+.nrn-detail-block + .nrn-detail-block {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--bs-border-color);
+}
 
 .nrn-hit-thumb {
   width: 68px;
@@ -217,6 +277,13 @@ code, pre, .font-mono, .nrn-json {
   margin-bottom: 0;
 }
 
+/* Sekcje zagnieżdżone (rekordy XML UPRP) — wcięcie z delikatną linią. */
+.nrn-record-nested {
+  margin-top: .75rem;
+  padding-left: .75rem;
+  border-left: 2px solid var(--bs-border-color);
+}
+
 .nrn-record-table th {
   font-weight: 500;
   color: var(--bs-secondary-color);
@@ -235,9 +302,9 @@ code, pre, .font-mono, .nrn-json {
 
 .nrn-chevron { transition: transform .2s ease; }
 
-#toggleJson[aria-expanded='true'] .nrn-chevron { transform: rotate(180deg); }
+.nrn-json-toggle[aria-expanded='true'] .nrn-chevron { transform: rotate(180deg); }
 
-/* --- galeria zasobów w zakładce Szczegóły --- */
+/* --- galeria zasobów w rozwiniętych szczegółach --- */
 
 .nrn-asset-grid {
   display: grid;
@@ -343,3 +410,18 @@ code, pre, .font-mono, .nrn-json {
 
 .nrn-token.ok { color: var(--bs-success) !important; }
 .nrn-token.err { color: var(--bs-danger) !important; }
+
+/* --- brama hasła --- */
+
+.nrn-login {
+  min-height: 100vh;
+  background: var(--bs-body-bg);
+}
+
+.nrn-login .modal { background: transparent; }
+
+.nrn-login-card {
+  background: var(--bs-tertiary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--nrn-radius);
+}

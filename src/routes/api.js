@@ -5,8 +5,11 @@ import { queries } from '../db.js';
 import { APIS } from '../metadata.js';
 import { config } from '../config.js';
 import { createAlert, runAlertCheck, buildAlertQuery, AlertError } from '../monitor.js';
+import { uprpRouter } from './uprp.js';
 
 export const apiRouter = Router();
+
+apiRouter.use('/uprp', uprpRouter);
 
 function fail(res, err) {
   if (err instanceof AlertError) {

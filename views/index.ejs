@@ -3,13 +3,13 @@
 <div class="nrn-hero mb-5">
   <h1 class="display-6 fw-semibold mb-2">NEURON</h1>
   <p class="lead text-secondary mb-0">
-    Interfejs do publicznych API Urzędu Unii Europejskiej ds. Własności Intelektualnej.
-    Przeszukuj rejestry unijnych znaków towarowych i wzorów przemysłowych.
+    Interfejs do publicznych API własności intelektualnej: EUIPO (znaki towarowe i wzory unijne)
+    oraz UPRP (polska e-Wyszukiwarka PWP).
   </p>
 </div>
 
 <div class="row g-4">
-  <div class="col-md-6">
+  <div class="col-md-4">
     <a class="card nrn-card h-100 text-decoration-none" href="<%= base %>/trademarks">
       <div class="card-body">
         <div class="nrn-card-icon"><i class="bi bi-tag"></i></div>
@@ -21,7 +21,7 @@
       </div>
     </a>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-4">
     <a class="card nrn-card h-100 text-decoration-none" href="<%= base %>/designs">
       <div class="card-body">
         <div class="nrn-card-icon"><i class="bi bi-bounding-box"></i></div>
@@ -33,17 +33,35 @@
       </div>
     </a>
   </div>
+  <div class="col-md-4">
+    <a class="card nrn-card h-100 text-decoration-none" href="<%= base %>/uprp">
+      <div class="card-body">
+        <div class="nrn-card-icon"><i class="bi bi-bank"></i></div>
+        <h2 class="h5 mt-3">UPRP e-Wyszukiwarka</h2>
+        <p class="text-secondary mb-3">
+          Polskie PWP: wyszukiwanie zaawansowane, rekordy zgłoszeń, zmiany od dnia, publikacje BUP/WUP.
+        </p>
+        <code class="small">GET /ewyszukiwarka/api/external/pwp</code>
+      </div>
+    </a>
+  </div>
 </div>
 
 <h2 class="h6 text-uppercase text-secondary mt-5 mb-3">Stan usługi</h2>
 <div class="row g-3" id="statsRow">
   <div class="col-sm-6 col-lg-4">
     <div class="nrn-stat">
-      <div class="nrn-stat-label">Token OAuth2</div>
+      <div class="nrn-stat-label">Token OAuth2 (EUIPO)</div>
       <div class="nrn-stat-value" id="statToken">—</div>
     </div>
   </div>
-  <div class="col-sm-6 col-lg-8">
+  <div class="col-sm-6 col-lg-4">
+    <div class="nrn-stat">
+      <div class="nrn-stat-label">Token JWT (UPRP)</div>
+      <div class="nrn-stat-value" id="statUprpToken">—</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-4">
     <div class="nrn-stat">
       <div class="nrn-stat-label">Środowisko EUIPO</div>
       <div class="nrn-stat-value">

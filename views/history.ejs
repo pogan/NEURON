@@ -7,7 +7,7 @@
     <div class="col-sm-6 col-lg-4">
       <div class="nrn-stat">
         <div class="nrn-stat-label">
-          <%= s.api === 'design' ? 'Wzory' : 'Znaki towarowe' %>
+          <%= { trademark: 'Znaki towarowe', design: 'Wzory', uprp: 'UPRP' }[s.api] || s.api %>
           <span class="badge <%= s.environment === 'sandbox' ? 'text-bg-warning' : 'text-bg-secondary' %>"><%= s.environment || 'production' %></span>
         </div>
         <div class="nrn-stat-value"><%= s.calls %></div>

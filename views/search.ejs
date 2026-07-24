@@ -5,193 +5,131 @@
     <h1 class="h3 mb-1"><%= api.label %></h1>
     <p class="text-secondary mb-0 small"><code><%= api.base %></code></p>
   </div>
-  <ul class="nav nav-pills nrn-tabs" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-search"><i class="bi bi-search me-1"></i>Wyszukiwanie</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-detail"><i class="bi bi-file-earmark-text me-1"></i>Szczegóły</button></li>
-  </ul>
+  <p class="text-secondary small mb-0">
+    <i class="bi bi-arrows-expand me-1"></i>Kliknij wynik, aby rozwinąć pełne szczegóły rekordu.
+  </p>
 </div>
 
-<div class="tab-content">
+<div class="row g-4">
+  <div class="col-lg-4">
+    <form id="searchForm" class="nrn-panel">
+      <h2 class="h6 text-uppercase text-secondary mb-3">Kreator zapytania RSQL</h2>
 
-  <!-- ================================================= WYSZUKIWANIE -->
-  <div class="tab-pane fade show active" id="tab-search">
-    <div class="row g-4">
-      <div class="col-lg-5">
-        <form id="searchForm" class="nrn-panel">
-          <h2 class="h6 text-uppercase text-secondary mb-3">Kreator zapytania RSQL</h2>
+      <div id="criteriaRows" class="vstack gap-2 mb-2"></div>
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="addCriterion">
+          <i class="bi bi-plus-lg"></i> Dodaj warunek
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearCriteria">
+          <i class="bi bi-x-lg"></i> Wyczyść
+        </button>
+      </div>
 
-          <div id="criteriaRows" class="vstack gap-2 mb-2"></div>
-          <div class="d-flex gap-2 mb-3">
-            <button type="button" class="btn btn-sm btn-outline-primary" id="addCriterion">
-              <i class="bi bi-plus-lg"></i> Dodaj warunek
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="clearCriteria">
-              <i class="bi bi-x-lg"></i> Wyczyść
-            </button>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label d-flex justify-content-between align-items-center">
-              <span>Zapytanie <code>query</code> (RSQL)</span>
-              <span class="form-check form-switch small mb-0">
-                <input class="form-check-input" type="checkbox" id="manualQuery">
-                <label class="form-check-label" for="manualQuery">Edycja ręczna</label>
-              </span>
-            </label>
-            <textarea class="form-control font-mono" id="queryInput" name="query" rows="3"
-                      placeholder="np. status==REGISTERED and applicationDate>=2024-01-01" readonly></textarea>
-            <div class="form-text">
-              Przykłady:
-              <% api.queryExamples.forEach(function (ex, i) { %>
-                <a href="#" class="nrn-example" data-query="<%= ex.value %>" title="<%= ex.value %>"><%= ex.label %></a><%= i < api.queryExamples.length - 1 ? ' · ' : '' %>
-              <% }); %>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label" for="pageInput">Strona (<code>page</code>)</label>
-              <input type="number" class="form-control" id="pageInput" name="page" value="0" min="0">
-            </div>
-            <div class="col-6">
-              <label class="form-label" for="sizeInput">Rozmiar (<code>size</code>)</label>
-              <input type="number" class="form-control" id="sizeInput" name="size" value="10" min="10" max="100" step="10">
-            </div>
-            <div class="col-8">
-              <label class="form-label" for="sortField">Sortowanie (<code>sort</code>)</label>
-              <select class="form-select" id="sortField">
-                <option value="">— brak —</option>
-                <% api.sortFields.forEach(function (f) { %><option value="<%= f %>"><%= f %></option><% }); %>
-              </select>
-            </div>
-            <div class="col-4">
-              <label class="form-label" for="sortDir">Kierunek</label>
-              <select class="form-select" id="sortDir">
-                <option value="asc">asc</option>
-                <option value="desc">desc</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="fieldsInput">Pola (<code>fields</code>)</label>
-            <input type="text" class="form-control font-mono" id="fieldsInput" name="fields"
-                   placeholder="<%= api.fieldsExample %>">
-            <div class="form-text">Filtr pól odpowiedzi, np. <code><%= api.fieldsExample %></code> albo <code><%= api.idField %></code>.</div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label" for="langInput">Język treści (<code>Accept-Language</code>)</label>
-            <select class="form-select" id="langInput" name="lang">
-              <option value="">— wszystkie —</option>
-            </select>
-          </div>
-
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary flex-grow-1">
-              <i class="bi bi-search me-1"></i> Szukaj
-            </button>
-            <button type="button" class="btn btn-outline-secondary" id="saveQuery" title="Zapisz zapytanie">
-              <i class="bi bi-bookmark-plus"></i>
-            </button>
-          </div>
-        </form>
-
-        <div class="nrn-panel mt-3">
-          <h2 class="h6 text-uppercase text-secondary mb-3">Zapisane zapytania</h2>
-          <div id="savedList" class="vstack gap-1 small text-secondary">Brak zapisanych zapytań.</div>
+      <div class="mb-3">
+        <label class="form-label d-flex justify-content-between align-items-center">
+          <span>Zapytanie <code>query</code> (RSQL)</span>
+          <span class="form-check form-switch small mb-0">
+            <input class="form-check-input" type="checkbox" id="manualQuery">
+            <label class="form-check-label" for="manualQuery">Edycja ręczna</label>
+          </span>
+        </label>
+        <textarea class="form-control font-mono" id="queryInput" name="query" rows="3"
+                  placeholder="np. status==REGISTERED and applicationDate>=2024-01-01" readonly></textarea>
+        <div class="form-text">
+          Przykłady:
+          <% api.queryExamples.forEach(function (ex, i) { %>
+            <a href="#" class="nrn-example" data-query="<%= ex.value %>" title="<%= ex.value %>"><%= ex.label %></a><%= i < api.queryExamples.length - 1 ? ' · ' : '' %>
+          <% }); %>
         </div>
       </div>
 
-      <div class="col-lg-7">
-        <div class="nrn-panel h-100 d-flex flex-column">
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <h2 class="h6 text-uppercase text-secondary mb-0">Wynik</h2>
-            <div class="btn-group btn-group-sm" role="group">
-              <input type="radio" class="btn-check" name="viewMode" id="viewTable" value="table" checked>
-              <label class="btn btn-outline-secondary" for="viewTable"><i class="bi bi-table"></i> Tabela</label>
-              <input type="radio" class="btn-check" name="viewMode" id="viewJson" value="json">
-              <label class="btn btn-outline-secondary" for="viewJson"><i class="bi bi-braces"></i> JSON</label>
-            </div>
-          </div>
-          <div id="searchMeta" class="nrn-meta mb-3 d-none"></div>
-          <div id="searchResult" class="nrn-result flex-grow-1">
-            <p class="text-secondary mb-0">Zbuduj zapytanie i kliknij <em>Szukaj</em>.</p>
-          </div>
-          <nav class="mt-3 d-none" id="pager">
-            <div class="d-flex justify-content-between align-items-center">
-              <button class="btn btn-sm btn-outline-secondary" id="prevPage"><i class="bi bi-chevron-left"></i> Poprzednia</button>
-              <span class="small text-secondary" id="pagerLabel"></span>
-              <button class="btn btn-sm btn-outline-secondary" id="nextPage">Następna <i class="bi bi-chevron-right"></i></button>
-            </div>
-          </nav>
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label" for="pageInput">Strona (<code>page</code>)</label>
+          <input type="number" class="form-control" id="pageInput" name="page" value="0" min="0">
+        </div>
+        <div class="col-6">
+          <label class="form-label" for="sizeInput">Rozmiar (<code>size</code>)</label>
+          <input type="number" class="form-control" id="sizeInput" name="size" value="10" min="10" max="100" step="10">
+        </div>
+        <div class="col-8">
+          <label class="form-label" for="sortField">Sortowanie (<code>sort</code>)</label>
+          <select class="form-select" id="sortField">
+            <option value="">— brak —</option>
+            <% api.sortFields.forEach(function (f) { %><option value="<%= f %>"><%= f %></option><% }); %>
+          </select>
+        </div>
+        <div class="col-4">
+          <label class="form-label" for="sortDir">Kierunek</label>
+          <select class="form-select" id="sortDir">
+            <option value="asc">asc</option>
+            <option value="desc">desc</option>
+          </select>
         </div>
       </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="fieldsInput">Pola (<code>fields</code>)</label>
+        <input type="text" class="form-control font-mono" id="fieldsInput" name="fields"
+               placeholder="<%= api.fieldsExample %>">
+        <div class="form-text">
+          Filtr pól odpowiedzi listy, np. <code><%= api.fieldsExample %></code> albo <code><%= api.idField %></code>.
+          Rozwinięte szczegóły zawsze pobierają pełny rekord.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="langInput">Język treści (<code>Accept-Language</code>)</label>
+        <select class="form-select" id="langInput" name="lang">
+          <option value="">— wszystkie —</option>
+        </select>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-grow-1">
+          <i class="bi bi-search me-1"></i> Szukaj
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="saveQuery" title="Zapisz zapytanie">
+          <i class="bi bi-bookmark-plus"></i>
+        </button>
+      </div>
+    </form>
+
+    <div class="nrn-panel mt-3">
+      <h2 class="h6 text-uppercase text-secondary mb-3">Zapisane zapytania</h2>
+      <div id="savedList" class="vstack gap-1 small text-secondary">Brak zapisanych zapytań.</div>
     </div>
   </div>
 
-  <!-- ===================================================== SZCZEGÓŁY -->
-  <div class="tab-pane fade" id="tab-detail">
-    <div class="row g-4">
-      <div class="col-lg-5">
-        <form id="detailForm" class="nrn-panel">
-          <h2 class="h6 text-uppercase text-secondary mb-3">Pobierz rekord</h2>
-          <div class="mb-3">
-            <label class="form-label" for="detailId"><%= api.idLabel %> (<code><%= api.idField %></code>)</label>
-            <input type="text" class="form-control font-mono" id="detailId" required
-                   pattern="<%= api.idPattern %>" placeholder="<%= api.idExample %>">
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="detailFields">Pola (<code>fields</code>)</label>
-            <input type="text" class="form-control font-mono" id="detailFields" placeholder="<%= api.fieldsExample %>">
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="detailLang">Język treści</label>
-            <select class="form-select" id="detailLang"><option value="">— wszystkie —</option></select>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">
-            <i class="bi bi-download me-1"></i> Pobierz szczegóły
+  <div class="col-lg-8">
+    <div class="nrn-panel h-100 d-flex flex-column">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Wynik</h2>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="collapseAll">
+            <i class="bi bi-chevron-bar-contract me-1"></i>Zwiń szczegóły
           </button>
-        </form>
-      </div>
-      <div class="col-lg-7">
-        <div class="nrn-panel mb-3">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h6 text-uppercase text-secondary mb-0">Zasoby</h2>
-            <span class="small text-secondary" id="detailAssetsSummary"></span>
-          </div>
-          <div id="detailAssets">
-            <p class="text-secondary mb-0 small">Zasoby pobiorą się automatycznie po wczytaniu rekordu.</p>
-          </div>
-        </div>
-
-        <div class="nrn-panel mb-3">
-          <h2 class="h6 text-uppercase text-secondary mb-3">Rekord</h2>
-          <div id="detailTable">
-            <p class="text-secondary mb-0">Podaj identyfikator, aby pobrać pełny rekord.</p>
-          </div>
-        </div>
-
-        <div class="nrn-panel">
-          <div class="d-flex justify-content-between align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary" type="button" id="toggleJson"
-                    data-bs-toggle="collapse" data-bs-target="#detailJsonWrap"
-                    aria-expanded="false" aria-controls="detailJsonWrap">
-              <i class="bi bi-braces me-1"></i>Surowa odpowiedź JSON
-              <i class="bi bi-chevron-down ms-1 nrn-chevron"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary d-none" id="copyDetail"><i class="bi bi-clipboard"></i> Kopiuj JSON</button>
-          </div>
-          <div class="collapse" id="detailJsonWrap">
-            <div id="detailResult" class="nrn-result mt-3">
-              <p class="text-secondary mb-0">Podaj identyfikator, aby pobrać pełny rekord.</p>
-            </div>
+          <div class="btn-group btn-group-sm" role="group">
+            <input type="radio" class="btn-check" name="viewMode" id="viewTable" value="table" checked>
+            <label class="btn btn-outline-secondary" for="viewTable"><i class="bi bi-table"></i> Tabela</label>
+            <input type="radio" class="btn-check" name="viewMode" id="viewJson" value="json">
+            <label class="btn btn-outline-secondary" for="viewJson"><i class="bi bi-braces"></i> JSON</label>
           </div>
         </div>
       </div>
+      <div id="searchMeta" class="nrn-meta mb-3 d-none"></div>
+      <div id="searchResult" class="nrn-result flex-grow-1">
+        <p class="text-secondary mb-0">Zbuduj zapytanie i kliknij <em>Szukaj</em>.</p>
+      </div>
+      <nav class="mt-3 d-none" id="pager">
+        <div class="d-flex justify-content-between align-items-center">
+          <button class="btn btn-sm btn-outline-secondary" id="prevPage"><i class="bi bi-chevron-left"></i> Poprzednia</button>
+          <span class="small text-secondary" id="pagerLabel"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="nextPage">Następna <i class="bi bi-chevron-right"></i></button>
+        </div>
+      </nav>
     </div>
   </div>
-
 </div>
 
 <script id="apiMeta" type="application/json"><%- apiJson %></script>

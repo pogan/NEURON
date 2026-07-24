@@ -86,7 +86,8 @@ export function logRequest(entry) {
   try {
     insertLog.run({
       api: entry.api,
-      environment: config.euipo.environment,
+      // UPRP i inne moduły mogą podać własne środowisko; domyślnie bierzemy EUIPO.
+      environment: entry.environment || config.euipo.environment,
       endpoint: entry.endpoint,
       params: entry.params ? JSON.stringify(entry.params) : null,
       status: entry.status ?? null,

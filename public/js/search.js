@@ -154,15 +154,14 @@ rowsBox.append(criterionRow());
 
 /* ================================================ listy językowe */
 
-for (const select of [document.getElementById('langInput'), document.getElementById('detailLang')]) {
-  for (const lang of EU_LANGS) {
-    const opt = document.createElement('option');
-    opt.value = lang;
-    opt.textContent = lang;
-    select.append(opt);
-  }
-  select.value = 'pl';
+const langInput = document.getElementById('langInput');
+for (const lang of EU_LANGS) {
+  const opt = document.createElement('option');
+  opt.value = lang;
+  opt.textContent = lang;
+  langInput.append(opt);
 }
+langInput.value = 'pl';
 
 /* ===================================================== wyszukiwanie */
 
@@ -183,7 +182,7 @@ function currentParams() {
     page: pageInput.value,
     size: document.getElementById('sizeInput').value,
     sort: sortField ? `${sortField}:${document.getElementById('sortDir').value}` : '',
-    lang: document.getElementById('langInput').value,
+    lang: langInput.value,
   };
 }
 
@@ -247,7 +246,12 @@ function showPager(data) {
 }
 
 function showResult(data) {
+  // Nowa lista wyników unieważnia wszystkie rozwinięte szczegóły i ich podglądy.
+  releaseObjectUrls();
+  collapseAllBtn.classList.add('d-none');
+
   const mode = document.querySelector('input[name="viewMode"]:checked').value;
+  resultBox.classList.toggle('nrn-result-flow', mode === 'table');
   if (mode === 'json') return renderJson(resultBox, data);
 
   const items = data?.[COLLECTION] || [];
@@ -262,9 +266,15 @@ function showResult(data) {
 }
 
 function card(id, thumbUrl, iconClass, title, subtitle, chips) {
-  const el = document.createElement('div');
-  el.className = 'nrn-hit';
-  el.innerHTML = `
+  const group = document.createElement('div');
+  group.className = 'nrn-hit-group';
+
+  const hit = document.createElement('div');
+  hit.className = 'nrn-hit';
+  hit.setAttribute('role', 'button');
+  hit.tabIndex = 0;
+  hit.setAttribute('aria-expanded', 'false');
+  hit.innerHTML = `
     ${thumbUrl
       ? `<img class="nrn-hit-thumb" src="${thumbUrl}" alt="" loading="lazy"
              onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'nrn-hit-thumb',innerHTML:'<i class=\\'bi ${iconClass}\\'></i>'}))">`
@@ -274,9 +284,22 @@ function card(id, thumbUrl, iconClass, title, subtitle, chips) {
       <div class="small text-secondary mb-1">${subtitle}</div>
       <div>${chips}</div>
     </div>
-    <i class="bi bi-chevron-right text-secondary"></i>`;
-  el.addEventListener('click', () => openDetail(id));
-  return el;
+    <i class="bi bi-chevron-down text-secondary nrn-chevron"></i>`;
+
+  const detail = document.createElement('div');
+  detail.className = 'nrn-hit-detail d-none';
+
+  group.append(hit, detail);
+
+  const toggle = () => toggleDetail(group, id);
+  hit.addEventListener('click', toggle);
+  hit.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggle();
+    }
+  });
+  return group;
 }
 
 function trademarkCard(tm) {
@@ -316,62 +339,150 @@ function designCard(dn) {
   );
 }
 
-/* ======================================================= szczegóły */
+/* ======================== szczegóły rozwijane w liście wyników */
 
-const detailForm = document.getElementById('detailForm');
-const detailResult = document.getElementById('detailResult');
-const detailTable = document.getElementById('detailTable');
-const copyDetail = document.getElementById('copyDetail');
-let detailPayload = null;
+const collapseAllBtn = document.getElementById('collapseAll');
 
-async function loadDetail(id) {
-  renderLoading(detailTable);
-  copyDetail.classList.add('d-none');
+// Podglądy zasobów żyją jako blob: — zwalniamy je dopiero przy nowej liście wyników.
+let objectUrls = [];
+let openGroup = null;
+
+function releaseObjectUrls() {
+  objectUrls.forEach(URL.revokeObjectURL);
+  objectUrls = [];
+  openGroup = null;
+}
+
+function collapseGroup(group) {
+  group.classList.remove('open');
+  group.querySelector('.nrn-hit').setAttribute('aria-expanded', 'false');
+  group.querySelector('.nrn-hit-detail').classList.add('d-none');
+  if (openGroup === group) openGroup = null;
+  if (!openGroup) collapseAllBtn.classList.add('d-none');
+}
+
+/** Rozwinięty jest jeden rekord naraz — inaczej łatwo przekroczyć limity EUIPO na zasobach. */
+function toggleDetail(group, id) {
+  if (group.classList.contains('open')) {
+    collapseGroup(group);
+    return;
+  }
+  if (openGroup) collapseGroup(openGroup);
+
+  openGroup = group;
+  group.classList.add('open');
+  group.querySelector('.nrn-hit').setAttribute('aria-expanded', 'true');
+  collapseAllBtn.classList.remove('d-none');
+
+  const box = group.querySelector('.nrn-hit-detail');
+  box.classList.remove('d-none');
+  if (!box.dataset.loaded) {
+    box.dataset.loaded = '1';
+    loadDetail(id, box);
+  }
+}
+
+collapseAllBtn.addEventListener('click', () => {
+  if (openGroup) collapseGroup(openGroup);
+});
+
+/** Pełny rekord + zasoby + surowy JSON, renderowane w wierszu wyniku. */
+async function loadDetail(id, box) {
+  box.innerHTML = `
+    <div class="nrn-detail-block">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+        <h3 class="nrn-record-heading mb-0">Zasoby</h3>
+        <span class="small text-secondary nrn-assets-summary"></span>
+      </div>
+      <div class="nrn-assets"></div>
+    </div>
+    <div class="nrn-detail-block nrn-detail-record"></div>
+    <div class="nrn-detail-block">
+      <div class="d-flex justify-content-between align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-secondary nrn-json-toggle" type="button" aria-expanded="false">
+          <i class="bi bi-braces me-1"></i>Surowa odpowiedź JSON
+          <i class="bi bi-chevron-down ms-1 nrn-chevron"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary nrn-json-copy d-none" type="button">
+          <i class="bi bi-clipboard"></i> Kopiuj JSON
+        </button>
+      </div>
+      <div class="nrn-json-wrap nrn-result d-none mt-2"></div>
+    </div>`;
+
+  const recordBox = box.querySelector('.nrn-detail-record');
+  const assetsBox = box.querySelector('.nrn-assets');
+  const assetsSummary = box.querySelector('.nrn-assets-summary');
+  const jsonWrap = box.querySelector('.nrn-json-wrap');
+  const jsonToggle = box.querySelector('.nrn-json-toggle');
+  const jsonCopy = box.querySelector('.nrn-json-copy');
+
+  jsonToggle.addEventListener('click', () => {
+    const hidden = jsonWrap.classList.toggle('d-none');
+    jsonToggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+  });
+
+  renderLoading(recordBox);
+  assetsBox.innerHTML = '<p class="text-secondary mb-0 small">Zasoby pobiorą się po wczytaniu rekordu.</p>';
+
   try {
-    const payload = await apiGet(`${RESOURCE}/${encodeURIComponent(id)}`, {
-      fields: document.getElementById('detailFields').value.trim(),
-      lang: document.getElementById('detailLang').value,
+    const payload = await apiGet(`${RESOURCE}/${encodeURIComponent(id)}`, { lang: langInput.value });
+    if (!box.isConnected) return;
+
+    renderRecordTable(recordBox, payload.data);
+    renderJson(jsonWrap, payload.data);
+    jsonCopy.classList.remove('d-none');
+    jsonCopy.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(JSON.stringify(payload.data, null, 2));
+      jsonCopy.innerHTML = '<i class="bi bi-check2"></i> Skopiowano';
+      setTimeout(() => { jsonCopy.innerHTML = '<i class="bi bi-clipboard"></i> Kopiuj JSON'; }, 1500);
     });
-    detailPayload = payload.data;
-    renderRecordTable(detailTable, payload.data);
-    renderJson(detailResult, payload.data);
-    copyDetail.classList.remove('d-none');
-    loadDetailAssets(id, payload.data);
+
+    loadAssets(id, payload.data, assetsBox, assetsSummary);
   } catch (err) {
-    renderError(detailTable, err);
-    renderJson(detailResult, err.details ?? null);
-    clearDetailAssets('Nie pobrano rekordu — brak informacji o zasobach.');
+    if (!box.isConnected) return;
+    renderError(recordBox, err);
+    renderJson(jsonWrap, err.details ?? null);
+    assetsBox.innerHTML =
+      '<p class="text-secondary mb-0 small">Nie pobrano rekordu — brak informacji o zasobach.</p>';
+    // Nieudane pobranie nie blokuje kolejnej próby przy ponownym rozwinięciu.
+    box.dataset.loaded = '';
   }
 }
 
 /* ------------------------------- automatyczne pobieranie zasobów rekordu */
 
-const detailAssets = document.getElementById('detailAssets');
-const detailAssetsSummary = document.getElementById('detailAssetsSummary');
-let assetObjectUrls = [];
-let assetsToken = 0;
+// EUIPO limituje liczbę żądań na sekundę — nie więcej niż trzy zasoby jednocześnie.
+const ASSET_SLOTS = 3;
+let assetSlotsFree = ASSET_SLOTS;
+const assetQueue = [];
 
-function clearDetailAssets(message) {
-  assetObjectUrls.forEach(URL.revokeObjectURL);
-  assetObjectUrls = [];
-  detailAssetsSummary.textContent = '';
-  detailAssets.innerHTML = `<p class="text-secondary mb-0 small">${escapeHtml(message)}</p>`;
+function withAssetSlot(task) {
+  return new Promise((resolve) => {
+    const run = async () => {
+      assetSlotsFree -= 1;
+      try {
+        resolve(await task());
+      } finally {
+        assetSlotsFree += 1;
+        assetQueue.shift()?.();
+      }
+    };
+    if (assetSlotsFree > 0) run();
+    else assetQueue.push(run);
+  });
 }
 
 /**
  * Lista zasobów do sprawdzenia dla danego rekordu.
  * Rekord szczegółowy sam deklaruje, co posiada (markImage/markSound/… oraz views[]),
  * więc oznaczamy z góry te, których na pewno nie ma — bez zbędnych żądań.
- * Gdy pole zostało odfiltrowane parametrem `fields`, i tak próbujemy pobrać.
  */
 function plannedAssets(id, record) {
   const enc = encodeURIComponent(id);
-  // Gdy użytkownik zawęził odpowiedź parametrem `fields`, rekord może nie zawierać
-  // deklaracji mediów mimo ich istnienia — wtedy sprawdzamy każdy zasób osobno.
-  const filtered = Boolean(document.getElementById('detailFields').value.trim());
 
   if (IS_TM) {
-    const present = (key, extra = true) => (filtered ? true : Boolean(record?.[key]) && extra);
+    const present = (key, extra = true) => Boolean(record?.[key]) && extra;
     return [
       { label: 'Obraz znaku', kind: 'image', path: `/trademarks/${enc}/image`,
         expected: present('markImage', record?.markFeature !== 'WORD'),
@@ -400,9 +511,9 @@ function plannedAssets(id, record) {
   }));
   items.push(
     { label: 'Model 3D', kind: 'binary', path: `/designs/${enc}/model`,
-      expected: filtered || Boolean(record?.model || record?.models?.length) },
+      expected: Boolean(record?.model || record?.models?.length) },
     { label: 'Wideo', kind: 'video', path: `/designs/${enc}/video`,
-      expected: filtered || Boolean(record?.videos?.length) }
+      expected: Boolean(record?.videos?.length) }
   );
   return items;
 }
@@ -427,11 +538,13 @@ function assetMissing(tile, reason) {
     `<span class="text-secondary small"><i class="bi bi-slash-circle me-1"></i>${escapeHtml(reason)}</span>`;
 }
 
-async function fetchAsset(tile, asset, token) {
+// Odłączony kafelek = wynik zniknął z listy (nowe wyszukiwanie), więc przerywamy pobieranie.
+async function fetchAsset(tile, asset) {
+  if (!tile.isConnected) return false;
   const body = tile.querySelector('.nrn-asset-body');
   try {
     const res = await fetch(apiUrl(asset.path));
-    if (token !== assetsToken) return false;
+    if (!tile.isConnected) return false;
 
     if (res.status === 404) {
       assetMissing(tile, 'Brak zasobu');
@@ -447,7 +560,7 @@ async function fetchAsset(tile, asset, token) {
 
     const type = res.headers.get('Content-Type') || '';
     const blob = await res.blob();
-    if (token !== assetsToken) return false;
+    if (!tile.isConnected) return false;
 
     if (!blob.size) {
       assetMissing(tile, 'Brak zasobu');
@@ -455,7 +568,7 @@ async function fetchAsset(tile, asset, token) {
     }
 
     const objectUrl = URL.createObjectURL(blob);
-    assetObjectUrls.push(objectUrl);
+    objectUrls.push(objectUrl);
 
     let preview;
     if (type.startsWith('image/')) {
@@ -477,18 +590,14 @@ async function fetchAsset(tile, asset, token) {
       </div>`;
     return true;
   } catch (err) {
-    if (token !== assetsToken) return false;
+    if (!tile.isConnected) return false;
     tile.classList.add('nrn-asset-empty');
     body.innerHTML = `<span class="text-danger small">${escapeHtml(err.message)}</span>`;
     return false;
   }
 }
 
-async function loadDetailAssets(id, record) {
-  assetObjectUrls.forEach(URL.revokeObjectURL);
-  assetObjectUrls = [];
-  const token = ++assetsToken;
-
+async function loadAssets(id, record, container, summaryEl) {
   const planned = plannedAssets(id, record);
   const grid = document.createElement('div');
   grid.className = 'nrn-asset-grid';
@@ -497,50 +606,24 @@ async function loadDetailAssets(id, record) {
   for (const asset of planned) {
     const tile = assetTile(asset);
     grid.append(tile);
-    if (asset.expected) {
-      pending.push({ tile, asset });
-    } else {
-      assetMissing(tile, 'Brak zasobu');
-    }
+    if (asset.expected) pending.push({ tile, asset });
+    else assetMissing(tile, 'Brak zasobu');
   }
 
-  detailAssets.replaceChildren(grid);
-  detailAssetsSummary.textContent = pending.length
+  container.replaceChildren(grid);
+  summaryEl.textContent = pending.length
     ? `pobieram ${pending.length} z ${planned.length}…`
     : 'rekord nie zawiera żadnych zasobów';
 
-  // Pobieranie w partiach po 3, żeby nie przekroczyć limitów EUIPO.
-  let found = 0;
-  for (let i = 0; i < pending.length; i += 3) {
-    if (token !== assetsToken) return;
-    const batch = pending.slice(i, i + 3);
-    const results = await Promise.all(
-      batch.map(({ tile, asset }) => fetchAsset(tile, asset, token))
-    );
-    found += results.filter(Boolean).length;
-  }
+  const results = await Promise.all(
+    pending.map(({ tile, asset }) => withAssetSlot(() => fetchAsset(tile, asset)))
+  );
+  if (!container.isConnected) return;
 
-  if (token !== assetsToken) return;
-  detailAssetsSummary.textContent = found
+  const found = results.filter(Boolean).length;
+  summaryEl.textContent = found
     ? `dostępne: ${found} z ${planned.length}`
     : 'brak dostępnych zasobów';
-}
-
-detailForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  loadDetail(document.getElementById('detailId').value.trim());
-});
-
-copyDetail.addEventListener('click', async () => {
-  await navigator.clipboard.writeText(JSON.stringify(detailPayload, null, 2));
-  copyDetail.innerHTML = '<i class="bi bi-check2"></i> Skopiowano';
-  setTimeout(() => { copyDetail.innerHTML = '<i class="bi bi-clipboard"></i> Kopiuj JSON'; }, 1500);
-});
-
-function openDetail(id) {
-  document.getElementById('detailId').value = id;
-  document.querySelector('[data-bs-target="#tab-detail"]').click();
-  loadDetail(id);
 }
 
 /* ============================================== zapisane zapytania */

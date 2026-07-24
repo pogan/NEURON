@@ -13,10 +13,22 @@ export function apiUrl(path, params) {
   return url;
 }
 
+/**
+ * Wygasła sesja bramy hasła — API zwraca 401 zamiast danych.
+ * Przerzucamy przeglądarkę na modal logowania z powrotem na bieżącą stronę.
+ */
+export function redirectIfUnauthorized(res) {
+  if (res.status !== 401) return false;
+  const next = encodeURIComponent(window.location.pathname + window.location.search);
+  window.location.assign(`${BASE}/login?next=${next}`);
+  return true;
+}
+
 export async function apiGet(path, params) {
   const res = await fetch(apiUrl(path, params), {
     headers: { Accept: 'application/json' },
   });
+  if (redirectIfUnauthorized(res)) throw new Error('Sesja wygasła — trwa przekierowanie do logowania.');
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = new Error((data && data.error) || `HTTP ${res.status}`);
@@ -116,6 +128,22 @@ async function checkToken() {
 }
 
 checkToken();
+
+/** Kafelek stanu tokenu UPRP — tylko na stronie startowej. */
+async function checkUprpToken() {
+  const stat = document.getElementById('statUprpToken');
+  if (!stat) return;
+  try {
+    const info = await apiGet('/uprp/token');
+    stat.textContent = `aktywny (${Math.round(info.expiresInSeconds / 3600)} h)`;
+  } catch (err) {
+    stat.textContent = 'błąd';
+    stat.classList.add('text-danger');
+    stat.title = err.message;
+  }
+}
+
+checkUprpToken();
 
 /* -------------------------------------- badge nowych wpisów przy „Alerty" */
 

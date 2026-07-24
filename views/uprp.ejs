@@ -1,0 +1,284 @@
+<%- include('partials/head') %>
+
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1"><%= api.label %></h1>
+    <p class="text-secondary mb-0 small">
+      <code><%= api.base %></code>
+      · <a class="link-secondary" href="<%= api.docUrl %>" target="_blank" rel="noopener">dokumentacja API</a>
+    </p>
+  </div>
+  <ul class="nav nav-pills nrn-tabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-search"><i class="bi bi-search me-1"></i>Wyszukiwanie</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pwp"><i class="bi bi-file-earmark-text me-1"></i>Rekord PWP</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-changed"><i class="bi bi-arrow-repeat me-1"></i>Zmienione od dnia</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-bib"><i class="bi bi-journal-text me-1"></i>BUP / WUP</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-dict"><i class="bi bi-book me-1"></i>Słowniki</button></li>
+  </ul>
+</div>
+
+<div class="tab-content">
+
+  <!-- ============================== WYSZUKIWANIE ZAAWANSOWANE -->
+  <div class="tab-pane fade show active" id="tab-search">
+    <form id="uprpSearchForm" class="nrn-panel nrn-filters mb-4">
+      <div class="nrn-filters-head">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Kryteria wyszukiwania</h2>
+        <div class="form-text mb-0">
+          Przykłady:
+          <% api.searchExamples.forEach(function (ex, i) { %>
+            <a href="#" class="nrn-example uprp-example" data-example="<%= i %>"><%= ex.label %></a><%= i < api.searchExamples.length - 1 ? ' · ' : '' %>
+          <% }); %>
+        </div>
+      </div>
+
+      <div id="uprpCriteria" class="vstack gap-2 mb-2"></div>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="uprpAddCriterion">
+          <i class="bi bi-plus-lg"></i> Dodaj warunek
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="uprpClearCriteria">
+          <i class="bi bi-x-lg"></i> Wyczyść
+        </button>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <label class="form-label">Typy PWP (<code>pwpTypes</code>)</label>
+          <div id="uprpPwpTypes" class="nrn-filter-scroll d-flex flex-wrap gap-2 small text-secondary">wczytuję…</div>
+        </div>
+        <div class="col-lg-5">
+          <label class="form-label">Kolekcje (<code>collections</code> / <code>subCollections</code>)</label>
+          <div id="uprpCollections" class="nrn-filter-scroll vstack gap-1 small text-secondary">wczytuję…</div>
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label" for="uprpLimit">Wyników na stronę (<code>limit</code>)</label>
+          <input type="number" class="form-control mb-3" id="uprpLimit" value="10" min="1" max="100">
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="uprpDiacritical" checked>
+            <label class="form-check-label small" for="uprpDiacritical">Polskie znaki (<code>includeDiacritical</code>)</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-search me-1"></i> Szukaj
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="nrn-panel">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Wynik</h2>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="uprpCollapseAll">
+            <i class="bi bi-chevron-bar-contract me-1"></i>Zwiń szczegóły
+          </button>
+          <div class="btn-group btn-group-sm" role="group">
+            <input type="radio" class="btn-check" name="uprpSearchView" id="uprpViewList" value="list" checked>
+            <label class="btn btn-outline-secondary" for="uprpViewList"><i class="bi bi-table"></i> Tabela</label>
+            <input type="radio" class="btn-check" name="uprpSearchView" id="uprpViewJson" value="json">
+            <label class="btn btn-outline-secondary" for="uprpViewJson"><i class="bi bi-braces"></i> JSON</label>
+          </div>
+        </div>
+      </div>
+      <div id="uprpSearchMeta" class="nrn-meta mb-3 d-none"></div>
+      <div id="uprpSearchResult" class="nrn-result nrn-result-flow">
+        <p class="text-secondary mb-0">Zbuduj kryteria i kliknij <em>Szukaj</em>.</p>
+      </div>
+      <nav class="mt-3 d-none" id="uprpPager">
+        <div class="d-flex justify-content-between align-items-center">
+          <button class="btn btn-sm btn-outline-secondary" id="uprpPrevPage"><i class="bi bi-chevron-left"></i> Poprzednia</button>
+          <span class="small text-secondary" id="uprpPagerLabel"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="uprpNextPage">Następna <i class="bi bi-chevron-right"></i></button>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ========================================== REKORD PWP -->
+  <div class="tab-pane fade" id="tab-pwp">
+    <form id="uprpPwpForm" class="nrn-panel nrn-filters mb-4">
+      <div class="nrn-filters-head">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Pobierz rekord</h2>
+        <div class="form-text mb-0">
+          Przykłady:
+          <% api.idExamples.forEach(function (ex, i) { %>
+            <a href="#" class="nrn-example uprp-pwp-example" data-number="<%= ex %>"><%= ex %></a><%= i < api.idExamples.length - 1 ? ' · ' : '' %>
+          <% }); %>
+        </div>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-6">
+          <label class="form-label" for="uprpPwpNumber"><%= api.idLabel %> (<code>pwpNumber</code>)</label>
+          <input type="text" class="form-control font-mono" id="uprpPwpNumber" required
+                 placeholder="<%= api.idExamples[0] %>">
+        </div>
+        <div class="col-lg-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-download me-1"></i> Pobierz dane
+          </button>
+        </div>
+        <div class="col-lg-3">
+          <button type="button" class="btn btn-outline-secondary w-100 d-none" id="uprpPwpXmlBtn">
+            <i class="bi bi-filetype-xml me-1"></i>Pobierz XML
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="nrn-panel mb-4">
+      <h2 class="h6 text-uppercase text-secondary mb-3">Rekord</h2>
+      <div id="uprpPwpSummary">
+        <p class="text-secondary mb-0">Podaj numer zgłoszenia, aby pobrać rekord.</p>
+      </div>
+      <div id="uprpPwpTable" class="mt-3"></div>
+    </div>
+
+    <div class="nrn-panel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Odpowiedź (JSON z XML)</h2>
+        <button class="btn btn-sm btn-outline-secondary nrn-json-toggle" type="button"
+                id="uprpPwpJsonToggle" aria-expanded="false">
+          <i class="bi bi-braces me-1"></i>Pokaż JSON
+          <i class="bi bi-chevron-down ms-1 nrn-chevron"></i>
+        </button>
+      </div>
+      <div id="uprpPwpResult" class="nrn-result d-none">
+        <p class="text-secondary mb-0 small">—</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================== ZMIENIONE OD DNIA -->
+  <div class="tab-pane fade" id="tab-changed">
+    <form id="uprpChangedForm" class="nrn-panel nrn-filters mb-4">
+      <div class="nrn-filters-head">
+        <h2 class="h6 text-uppercase text-secondary mb-0">PWP zmienione od dnia</h2>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-4">
+          <label class="form-label" for="uprpChangedDate">Data (<code>yyyy-mm-dd</code>)</label>
+          <input type="date" class="form-control" id="uprpChangedDate" required>
+        </div>
+        <div class="col-lg-3">
+          <label class="form-label" for="uprpChangedLimit">Wyników na stronę (<code>limit</code>)</label>
+          <input type="number" class="form-control" id="uprpChangedLimit" value="10" min="1" max="100">
+        </div>
+        <div class="col-lg-3">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-search me-1"></i> Pobierz
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="nrn-panel">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Wynik</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="uprpChangedCollapse">
+          <i class="bi bi-chevron-bar-contract me-1"></i>Zwiń szczegóły
+        </button>
+      </div>
+      <div id="uprpChangedMeta" class="nrn-meta mb-3 d-none"></div>
+      <div id="uprpChangedResult" class="nrn-result nrn-result-flow">
+        <p class="text-secondary mb-0">Wybierz datę i kliknij <em>Pobierz</em>.</p>
+      </div>
+      <nav class="mt-3 d-none" id="uprpChangedPager">
+        <div class="d-flex justify-content-between align-items-center">
+          <button class="btn btn-sm btn-outline-secondary" id="uprpChangedPrev"><i class="bi bi-chevron-left"></i> Poprzednia</button>
+          <span class="small text-secondary" id="uprpChangedLabel"></span>
+          <button class="btn btn-sm btn-outline-secondary" id="uprpChangedNext">Następna <i class="bi bi-chevron-right"></i></button>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ============================================== BUP / WUP -->
+  <div class="tab-pane fade" id="tab-bib">
+    <form id="uprpBibForm" class="nrn-panel nrn-filters mb-4">
+      <div class="nrn-filters-head">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Dane bibliograficzne BUP / WUP</h2>
+        <div class="form-text mb-0">Podaj numer publikacji albo zakres dat.</div>
+      </div>
+      <div class="row g-3 align-items-end">
+        <div class="col-lg-2 col-md-4">
+          <label class="form-label" for="uprpBibPublisher">Publikator (<code>publisher</code>)</label>
+          <select class="form-select" id="uprpBibPublisher" required>
+            <% api.publishers.forEach(function (p) { %><option value="<%= p %>"><%= p %></option><% }); %>
+          </select>
+        </div>
+        <div class="col-lg-3 col-md-4">
+          <label class="form-label" for="uprpBibType">Rodzaj PWP (<code>pwp_type</code>)</label>
+          <select class="form-select" id="uprpBibType" required>
+            <% api.pwpTypeNames.forEach(function (t) { %><option value="<%= t %>"><%= t %></option><% }); %>
+          </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
+          <label class="form-label" for="uprpBibNr">Numer publikacji (<code>nr_pub</code>)</label>
+          <input type="text" class="form-control font-mono" id="uprpBibNr" placeholder="np. 31/2021">
+        </div>
+        <div class="col-lg-2 col-md-3">
+          <label class="form-label" for="uprpBibStart">Od daty</label>
+          <input type="date" class="form-control" id="uprpBibStart">
+        </div>
+        <div class="col-lg-2 col-md-3">
+          <label class="form-label" for="uprpBibEnd">Do daty</label>
+          <input type="date" class="form-control" id="uprpBibEnd">
+        </div>
+        <div class="col-lg-1 col-md-6">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1" title="Pobierz">
+              <i class="bi bi-search"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="uprpBibXml" title="Pobierz surowy plik XML">
+              <i class="bi bi-filetype-xml"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="nrn-panel">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h6 text-uppercase text-secondary mb-0">Wynik</h2>
+        <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="uprpBibCollapse">
+          <i class="bi bi-chevron-bar-contract me-1"></i>Zwiń szczegóły
+        </button>
+      </div>
+      <div id="uprpBibMeta" class="nrn-meta mb-3 d-none"></div>
+      <div id="uprpBibResult" class="nrn-result nrn-result-flow">
+        <p class="text-secondary mb-0">Ustaw parametry i kliknij <em>Pobierz</em>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================== SŁOWNIKI -->
+  <div class="tab-pane fade" id="tab-dict">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="nrn-panel">
+          <h2 class="h6 text-uppercase text-secondary mb-3">Typy PWP <code>/pwp-types</code></h2>
+          <div id="uprpDictTypes" class="small text-secondary">wczytuję…</div>
+        </div>
+        <div class="nrn-panel mt-3">
+          <h2 class="h6 text-uppercase text-secondary mb-3">Kolekcje <code>/collections</code></h2>
+          <div id="uprpDictCollections" class="small text-secondary">wczytuję…</div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="nrn-panel">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h6 text-uppercase text-secondary mb-0">Atrybuty <code>/attributes</code></h2>
+            <input type="search" class="form-control form-control-sm w-auto" id="uprpDictFilter" placeholder="filtruj…">
+          </div>
+          <div id="uprpDictAttributes" class="nrn-result small text-secondary">wczytuję…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script id="uprpMeta" type="application/json"><%- apiJson %></script>
+<script type="module" src="<%= base %>/static/js/uprp.js?v=<%= v %>"></script>
+
+<%- include('partials/foot') %>

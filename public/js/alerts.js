@@ -1,7 +1,7 @@
 /* NEURON — strona alertów (monitoring EUIPO) */
 
 const V = new URL(import.meta.url).search;
-const { apiGet, apiUrl, renderError, escapeHtml, fmtDate, refreshAlertBadge } =
+const { apiGet, apiUrl, renderError, escapeHtml, fmtDate, refreshAlertBadge, redirectIfUnauthorized } =
   await import('./app.js' + V);
 const { renderRecordTable, formatScalar } = await import('./record-table.js' + V);
 
@@ -21,6 +21,7 @@ async function apiPost(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (redirectIfUnauthorized(res)) throw new Error('Sesja wygasła — trwa przekierowanie do logowania.');
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const err = new Error((data && data.error) || `HTTP ${res.status}`);

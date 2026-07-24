@@ -44,6 +44,14 @@ export const config = {
   // Ścieżka bazowa gdy aplikacja stoi za NGINX pod podkatalogiem (np. /neuron)
   basePath: (process.env.BASE_PATH || '').replace(/\/$/, ''),
   dbFile: process.env.DB_FILE || path.join(ROOT, 'data', 'neuron.sqlite'),
+  // Brama hasła. Pusty WEBSITE_PASS = strona publiczna.
+  auth: {
+    password: process.env.WEBSITE_PASS || '',
+    secret: process.env.SESSION_SECRET || '',
+    maxAgeMs: Number(process.env.SESSION_HOURS || 12) * 60 * 60 * 1000,
+    // Wymuszenie flagi Secure gdy TLS kończy się na NGINX i nie ma X-Forwarded-Proto.
+    cookieSecure: String(process.env.COOKIE_SECURE || '').toLowerCase() === 'true',
+  },
   euipo: {
     environment: IS_SANDBOX ? 'sandbox' : 'production',
     isSandbox: IS_SANDBOX,
@@ -54,6 +62,12 @@ export const config = {
     trademarkBase: process.env.EUIPO_TRADEMARK_BASE || `${apiHost}/trademark-search`,
     designBase: process.env.EUIPO_DESIGN_BASE || `${apiHost}/design-search`,
     scope: process.env.EUIPO_SCOPE || 'uid',
+  },
+  // UPRP nie rozróżnia środowisk — jest tylko system produkcyjny PUEUP.
+  uprp: {
+    apiKey: process.env.UPRP_API_KEY || process.env.UPRP_API_SECRET,
+    tokenUrl: process.env.UPRP_TOKEN_URL || 'https://api.uprp.gov.pl/cmuia/api/external/auth/token',
+    apiBase: process.env.UPRP_API_BASE || 'https://api.uprp.gov.pl/ewyszukiwarka/api/external',
   },
 };
 
@@ -89,5 +103,11 @@ export function assertCredentials() {
     console.warn(`[NEURON] Brak ${keyName} w .env — zapytania do API będą odrzucane.`);
   } else {
     console.log(`[NEURON] Client ID: ${id.slice(0, 8)}… · token: ${tokenUrl}`);
+  }
+
+  if (!config.uprp.apiKey) {
+    console.warn('[NEURON] Brak UPRP_API_KEY / UPRP_API_SECRET w .env — moduł UPRP będzie nieaktywny.');
+  } else {
+    console.log(`[NEURON] UPRP: klucz ${config.uprp.apiKey.slice(0, 8)}… · API: ${config.uprp.apiBase}`);
   }
 }

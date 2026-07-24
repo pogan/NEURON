@@ -83,12 +83,15 @@ wszystkie ścieżki (strony, `/static`, `/api`) przesuną się pod ten prefiks.
 | `/history`    | Historia zapytań i statystyki z SQLite |
 | `/healthz`    | Health check dla monitoringu |
 
-Każda podstrona API ma dwie zakładki pokrywające **wszystkie** operacje danego API:
+Każda podstrona API to jeden widok pokrywający **wszystkie** operacje danego API:
 
 1. **Wyszukiwanie** — kreator RSQL (pole / operator / wartość / and-or), pełna obsługa
    `query`, `fields`, `page`, `size`, `sort`, `Accept-Language`; wyniki jako tabela kart
    z miniaturami lub podświetlony JSON; paginacja; zapisywanie zapytań.
-2. **Szczegóły** — `GET /{id}` z parametrami `fields` i `Accept-Language`. Zawiera:
+2. **Szczegóły rozwijane w tabeli wyników** — kliknięcie wiersza wywołuje `GET /{id}`
+   (pełny rekord, `Accept-Language` z formularza) i rozwija panel pod wierszem.
+   Rozwinięty jest jeden rekord naraz, co utrzymuje liczbę żądań o zasoby w limitach
+   EUIPO. Panel zawiera:
    - **Zasoby** — wszystkie media rekordu pobierane automatycznie (dla znaków obraz,
      miniatura, dźwięk, wideo, model 3D; dla wzorów widoki 1–10, wideo, model 3D).
      Rekord sam deklaruje, co posiada, więc brakujące zasoby są oznaczane bez zbędnych

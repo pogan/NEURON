@@ -3,8 +3,10 @@ import express from 'express';
 import { config, assertCredentials, assetVersion, ROOT } from './config.js';
 import { apiRouter } from './routes/api.js';
 import { APIS } from './metadata.js';
+import { UPRP } from './uprp-meta.js';
 import { queries } from './db.js';
 import { startScheduler } from './monitor.js';
+import { installAuthGate, authEnabled } from './auth.js';
 
 assertCredentials();
 
@@ -12,8 +14,14 @@ const app = express();
 app.disable('x-powered-by');
 app.set('view engine', 'ejs');
 app.set('views', path.join(ROOT, 'views'));
+// Poprawne req.protocol / X-Forwarded-Proto za NGINX — decyduje o fladze Secure w ciasteczku sesji.
+app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '256kb' }));
+app.use(express.urlencoded({ extended: false, limit: '16kb' }));
+
+// Liczona przy starcie — w razie edycji plików wystarczy restart aplikacji (PM2 restart).
+const ASSET_V = assetVersion();
 
 const router = express.Router();
 
@@ -28,15 +36,21 @@ router.use(
   })
 );
 
-router.use('/api', apiRouter);
+// Poza bramą — sonda dla PM2/monitoringu nie może wymagać logowania.
+router.get('/healthz', (_req, res) =>
+  res.json({ ok: true, uptime: process.uptime(), environment: config.euipo.environment })
+);
 
-// Liczona przy starcie — w razie edycji plików wystarczy restart aplikacji (PM2 restart).
-const ASSET_V = assetVersion();
+// Od tego miejsca wszystko wymaga sesji (modal z hasłem).
+installAuthGate(router, { base: config.basePath, assetVersion: ASSET_V });
+
+router.use('/api', apiRouter);
 
 const nav = [
   { href: '/', icon: 'bi-house', label: 'Start' },
   { href: '/trademarks', icon: 'bi-tag', label: 'Znaki towarowe' },
   { href: '/designs', icon: 'bi-bounding-box', label: 'Wzory' },
+  { href: '/uprp', icon: 'bi-bank', label: 'UPRP' },
   { href: '/alerts', icon: 'bi-bell', label: 'Alerty' },
   { href: '/history', icon: 'bi-clock-history', label: 'Historia' },
 ];
@@ -47,6 +61,7 @@ function render(res, view, locals = {}) {
     nav,
     env: config.euipo.environment,
     v: ASSET_V,
+    auth: authEnabled,
     ...locals,
   });
 }
@@ -78,6 +93,15 @@ router.get('/designs', (_req, res) => {
   });
 });
 
+router.get('/uprp', (_req, res) => {
+  render(res, 'uprp', {
+    page: '/uprp',
+    title: 'UPRP e-Wyszukiwarka',
+    api: UPRP,
+    apiJson: JSON.stringify(UPRP),
+  });
+});
+
 router.get('/alerts', (_req, res) => {
   render(res, 'alerts', { page: '/alerts', title: 'Alerty' });
 });
@@ -91,10 +115,6 @@ router.get('/history', (_req, res) => {
   });
 });
 
-router.get('/healthz', (_req, res) =>
-  res.json({ ok: true, uptime: process.uptime(), environment: config.euipo.environment })
-);
-
 app.use(config.basePath || '/', router);
 
 app.use((_req, res) => {
@@ -103,6 +123,7 @@ app.use((_req, res) => {
     nav,
     env: config.euipo.environment,
     v: ASSET_V,
+    auth: authEnabled,
     page: '',
     title: 'Nie znaleziono',
     code: 404,
@@ -117,6 +138,7 @@ app.use((err, _req, res, _next) => {
     nav,
     env: config.euipo.environment,
     v: ASSET_V,
+    auth: authEnabled,
     page: '',
     title: 'Błąd',
     code: 500,
