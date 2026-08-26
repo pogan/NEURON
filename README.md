@@ -1,5 +1,8 @@
 # NEURON
 
+**Live:** [karol.konop.pl/neuron](https://karol.konop.pl/neuron) — password-protected; message
+[karol.konop@gmail.com](mailto:karol.konop@gmail.com) for demo access.
+
 A self-hosted web application for searching and monitoring the **EUIPO** (EU Intellectual
 Property Office) trademark and design registries, plus the Polish Patent Office's
 (**UPRP**) e-Wyszukiwarka register. It was built as a practical business tool — trademark
