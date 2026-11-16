@@ -4,9 +4,10 @@ import { config, assertCredentials, assetVersion, ROOT } from './config.js';
 import { apiRouter } from './routes/api.js';
 import { APIS } from './metadata.js';
 import { UPRP } from './uprp-meta.js';
-import { queries } from './db.js';
+import { db, queries } from './db.js';
 import { startScheduler } from './monitor.js';
 import { installAuthGate, authEnabled } from './auth.js';
+import { readVersion, healthz, createStats } from 'vamude-kit';
 
 assertCredentials();
 
@@ -23,6 +24,13 @@ app.use(express.urlencoded({ extended: false, limit: '16kb' }));
 // Liczona przy starcie — w razie edycji plików wystarczy restart aplikacji (PM2 restart).
 const ASSET_V = assetVersion();
 
+// Wersja w stopce i w /healthz (vamude-kit).
+const version = readVersion({ root: ROOT });
+app.locals.appVersion = version;
+
+// Statystyki odwiedzin (vamude-kit) w bazie aplikacji; panel /stats za tą samą bramą hasła co reszta.
+const stats = createStats({ db, guard: () => true });
+
 const router = express.Router();
 
 // `no-cache` nie wyłącza cache — pozwala go użyć dopiero po rewalidacji (zwykle 304).
@@ -37,12 +45,14 @@ router.use(
 );
 
 // Poza bramą — sonda dla PM2/monitoringu nie może wymagać logowania.
-router.get('/healthz', (_req, res) =>
-  res.json({ ok: true, uptime: process.uptime(), environment: config.euipo.environment })
-);
+router.get('/healthz', healthz({ version, checks: { db: () => db.prepare('SELECT 1').get() } }));
+
+router.use(stats.middleware);
 
 // Od tego miejsca wszystko wymaga sesji (modal z hasłem).
 installAuthGate(router, { base: config.basePath, assetVersion: ASSET_V });
+
+router.use(stats.panel);
 
 router.use('/api', apiRouter);
 
@@ -147,6 +157,6 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(config.port, config.host, () => {
-  console.log(`[NEURON] nasłuchuje na http://${config.host}:${config.port}${config.basePath}`);
+  console.log(`[NEURON] ${version.label} nasłuchuje na http://${config.host}:${config.port}${config.basePath}`);
   startScheduler();
 });

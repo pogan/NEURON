@@ -142,7 +142,8 @@ The active environment is visible in the UI (SANDBOX badge), in the startup log,
 | `/uprp`       | UPRP e-Wyszukiwarka search and record detail |
 | `/alerts`     | Create/manage watch-list alerts, review new matches |
 | `/history`    | Request log and usage stats from SQLite |
-| `/healthz`    | Health check for process monitoring (outside the auth gate) |
+| `/healthz`    | Health check in the shared [vamude-kit](https://github.com/pogan/vamude-kit) format: status, version, commit, DB check (outside the auth gate) |
+| `/stats`      | Visit statistics panel from vamude-kit (behind the auth gate); data in `vk_*` tables of the app database |
 
 Each search page covers the full lifecycle of a query: an RSQL query builder (field /
 operator / value / and-or), full support for `query`, `fields`, `page`, `size`, `sort`,
