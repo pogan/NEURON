@@ -18,5 +18,8 @@
     "express": "^4.21.2",
     "fast-xml-parser": "^5.10.1",
     "vamude-kit": "https://github.com/pogan/vamude-kit/archive/refs/tags/v1.0.0.tar.gz"
+  },
+  "allowScripts": {
+    "better-sqlite3": true
   }
 }
