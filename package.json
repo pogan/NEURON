@@ -17,6 +17,6 @@
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "fast-xml-parser": "^5.10.1",
-    "vamude-kit": "https://github.com/pogan/vamude-kit/archive/0aebb5abb89b084bb11a59aaf0d6384abf1c3b8e.tar.gz"
+    "vamude-kit": "https://github.com/pogan/vamude-kit/archive/refs/tags/v1.0.0.tar.gz"
   }
 }
