@@ -119,6 +119,18 @@ const migrations = [
       )
     `);
   },
+
+  // 3: pamięć podręczna sprawdzeń dostępności domen (RDAP/DNS).
+  (d) => {
+    d.exec(`
+      CREATE TABLE domain_check (
+        domain     TEXT PRIMARY KEY,
+        status     TEXT NOT NULL,   -- 'taken' | 'free' | 'unknown'
+        method     TEXT NOT NULL,   -- 'rdap' | 'dns'
+        checked_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+  },
 ];
 
 migrate(db, migrations);

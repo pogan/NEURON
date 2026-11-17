@@ -22,3 +22,8 @@ test('strona główna i 404 renderują się w Express 5', async () => {
   assert.equal((await fetch(`${base}/`)).status, 200);
   assert.equal((await fetch(`${base}/nie-ma-takiej-strony`)).status, 404);
 });
+
+test('strona „Sprawdź nazwę” i walidacja zapytania', async () => {
+  assert.equal((await fetch(`${base}/sprawdz`)).status, 200);
+  assert.equal((await fetch(`${base}/api/check?name=`)).status, 400);
+});

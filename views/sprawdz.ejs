@@ -1,0 +1,30 @@
+<%- include('partials/head') %>
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Sprawdź nazwę wszędzie</h1>
+  <p class="text-secondary mb-0">
+    Domeny, konta w social mediach i znaki towarowe w jednym miejscu.
+  </p>
+</div>
+
+<form id="checkForm" class="nrn-panel mb-4" role="search">
+  <label class="form-label" for="checkName">Nazwa marki, firmy albo produktu</label>
+  <div class="d-flex flex-column flex-sm-row gap-2">
+    <input type="text" class="form-control form-control-lg" id="checkName" name="name" required maxlength="100"
+           placeholder="np. Leśna Świeca" autocomplete="off">
+    <button type="submit" class="btn btn-primary btn-lg text-nowrap" id="checkSubmit">
+      <i class="bi bi-search me-1"></i> Sprawdź
+    </button>
+  </div>
+</form>
+
+<div id="checkResult" aria-live="polite"></div>
+
+<p class="small text-secondary mt-4 mb-0">
+  To automatyczne sprawdzenie, nie porada prawna. Wolna domena albo nazwa konta nie oznacza,
+  że nazwy wolno używać — o tym decydują prawa do znaków towarowych.
+</p>
+
+<script type="module" src="<%= base %>/static/js/sprawdz.js?v=<%= v %>"></script>
+
+<%- include('partials/foot') %>

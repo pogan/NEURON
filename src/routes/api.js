@@ -7,6 +7,7 @@ import { config } from '../config.js';
 import { createAlert, runAlertCheck, buildAlertQuery, AlertError } from '../monitor.js';
 import { uprpRouter } from './uprp.js';
 import { QuotaError } from '../quota.js';
+import { checkName } from '../namecheck.js';
 
 export const apiRouter = Router();
 
@@ -265,6 +266,20 @@ apiRouter.delete('/alerts/:id', (req, res) => {
   if (!alert) return;
   queries.deleteAlert.run(alert.id);
   res.status(204).end();
+});
+
+/* ------------------------------------------------- sprawdź nazwę wszędzie */
+
+apiRouter.get('/check', async (req, res) => {
+  const name = String(req.query.name || '').trim();
+  if (!name || name.length > 100) {
+    return res.status(400).json({ error: 'Podaj nazwę (do 100 znaków).' });
+  }
+  try {
+    res.json(await checkName(name));
+  } catch (err) {
+    fail(res, err);
+  }
 });
 
 /* ------------------------------------------------- historia i zapisane */
