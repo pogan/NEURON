@@ -1,11 +1,11 @@
 import dns from 'node:dns/promises';
 import { db } from './db.js';
 import { normalizeName } from './names.js';
-import { findByFragment, trademarkCounts } from './registry.js';
+import { findByFragment, trademarkCounts, findCompanies, companyCount } from './registry.js';
 
 /**
- * „Sprawdź nazwę wszędzie”: domeny, linki do kont w social mediach i szybki przegląd
- * znaków z lokalnej kopii rejestrów.
+ * „Sprawdź nazwę wszędzie”: domeny, linki do kont w social mediach, szybki przegląd
+ * znaków z lokalnej kopii rejestrów i nazwy podmiotów z indeksu KRS.
  *
  * Domeny: RDAP rejestru (.pl — NASK, .com — Verisign; 404 = brak domeny w rejestrze),
  * a gdy RDAP nie odpowie albo go nie ma (.eu) — rekordy NS w DNS (wynik orientacyjny).
@@ -136,11 +136,20 @@ export async function checkName(name, { tlds = TLDS } = {}) {
     exact: t.name_norm === normalizeName(name),
   }));
 
+  const companies = findCompanies(name, 20).map((c) => ({
+    krs: c.krs,
+    name: c.name,
+    legalForm: c.legal_form,
+    city: c.city,
+    registeredOn: c.registered_on,
+  }));
+
   return {
     name,
     normalized: normalizeName(name),
     domains,
     social,
     trademarks: { registry: trademarkCounts(), matches },
+    companies: { indexed: companyCount(), matches: companies },
   };
 }

@@ -69,6 +69,41 @@ const migrations = [
       END;
     `);
   },
+
+  // 3: nazwy podmiotów z KRS (rejestr przedsiębiorców P i stowarzyszeń S) + indeks trigramowy.
+  (d) => {
+    d.exec(`
+      CREATE TABLE company (
+        id            INTEGER PRIMARY KEY,         -- stały rowid dla indeksu FTS (VACUUM nie zmienia)
+        krs           TEXT NOT NULL UNIQUE,        -- numer KRS, 10 cyfr
+        register      TEXT NOT NULL,               -- 'P' | 'S'
+        name          TEXT NOT NULL,
+        name_norm     TEXT NOT NULL DEFAULT '',
+        legal_form    TEXT,
+        nip           TEXT,
+        regon         TEXT,
+        city          TEXT,
+        registered_on TEXT,                        -- data wpisu do KRS (RRRR-MM-DD)
+        last_entry_on TEXT,                        -- data ostatniego wpisu
+        removed       INTEGER NOT NULL DEFAULT 0,  -- 1: brak odpisu aktualnego (podmiot wykreślony)
+        synced_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE VIRTUAL TABLE company_fts USING fts5(
+        name_norm, content = 'company', content_rowid = 'id', tokenize = 'trigram'
+      );
+      CREATE TRIGGER company_ai AFTER INSERT ON company BEGIN
+        INSERT INTO company_fts (rowid, name_norm) VALUES (new.id, new.name_norm);
+      END;
+      CREATE TRIGGER company_ad AFTER DELETE ON company BEGIN
+        INSERT INTO company_fts (company_fts, rowid, name_norm) VALUES ('delete', old.id, old.name_norm);
+      END;
+      CREATE TRIGGER company_au AFTER UPDATE OF name_norm ON company BEGIN
+        INSERT INTO company_fts (company_fts, rowid, name_norm) VALUES ('delete', old.id, old.name_norm);
+        INSERT INTO company_fts (rowid, name_norm) VALUES (new.id, new.name_norm);
+      END;
+    `);
+  },
 ];
 
 migrate(registryDb, migrations);
