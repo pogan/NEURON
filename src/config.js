@@ -1,11 +1,15 @@
-import 'dotenv/config';
 import fs from 'node:fs';
+import dotenv from 'dotenv';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const ROOT = path.resolve(__dirname, '..');
+
+// Testy ustawiają środowisko same — lokalny .env (prawdziwe klucze API) nie może do nich przeciekać.
+const IS_TEST = process.env.NODE_ENV === 'test';
+if (!IS_TEST) dotenv.config({ quiet: true });
 
 /**
  * Środowisko EUIPO. ENV=sandbox przełącza na system testowy
@@ -38,12 +42,32 @@ const clientSecret = IS_SANDBOX
 
 const apiHost = process.env.EUIPO_API_HOST || active.apiHost;
 
+const dbFile = process.env.DB_FILE || path.join(ROOT, 'data', 'neuron.sqlite');
+
+/** Liczba całkowita ze zmiennej środowiskowej; zły zapis zgłasza validate(). */
+function int(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  return /^\d+$/.test(raw.trim()) ? Number(raw) : NaN;
+}
+
 export const config = {
-  port: Number(process.env.PORT || 3000),
+  isTest: IS_TEST,
+  port: int('PORT', 3000),
   host: process.env.HOST || '127.0.0.1',
   // Ścieżka bazowa gdy aplikacja stoi za NGINX pod podkatalogiem (np. /neuron)
   basePath: (process.env.BASE_PATH || '').replace(/\/$/, ''),
-  dbFile: process.env.DB_FILE || path.join(ROOT, 'data', 'neuron.sqlite'),
+  // Dane aplikacji (użytkownicy, alerty, kolejka) — objęte kopią zapasową.
+  dbFile,
+  // Kopia rejestrów EUIPO/UPRP — da się ją odbudować z API, więc może leżeć poza kopią zapasową.
+  registryDbFile: process.env.REGISTRY_DB_FILE || path.join(path.dirname(dbFile), 'registry.sqlite'),
+  // Dzienne limity zapytań (doba UTC). Wartości z nagłówków X-RateLimit EUIPO (2026-11);
+  // UPRP nie podaje limitu, więc ostrożne założenie do czasu pomiaru.
+  quota: {
+    'euipo-trademark': int('QUOTA_EUIPO_TRADEMARK', 6000),
+    'euipo-design': int('QUOTA_EUIPO_DESIGN', 35000),
+    uprp: int('QUOTA_UPRP', 5000),
+  },
   // Brama hasła. Pusty WEBSITE_PASS = strona publiczna.
   auth: {
     password: process.env.WEBSITE_PASS || '',
@@ -70,6 +94,23 @@ export const config = {
     apiBase: process.env.UPRP_API_BASE || 'https://api.uprp.gov.pl/ewyszukiwarka/api/external',
   },
 };
+
+/**
+ * Sprawdza konfigurację przy starcie. Błędy (zły zapis liczb) przerywają start;
+ * brak kluczy API tylko ostrzega — aplikacja wstaje, a zapytania do danego rejestru są odrzucane.
+ * @returns {string[]} lista błędów (pusta = OK)
+ */
+export function validateConfig(cfg = config) {
+  const errors = [];
+  if (!Number.isInteger(cfg.port) || cfg.port < 1 || cfg.port > 65535) errors.push('PORT musi być liczbą 1–65535.');
+  for (const [source, limit] of Object.entries(cfg.quota)) {
+    if (!Number.isInteger(limit) || limit < 1) errors.push(`Limit zapytań dla ${source} musi być dodatnią liczbą całkowitą.`);
+  }
+  if (path.resolve(cfg.dbFile) === path.resolve(cfg.registryDbFile)) {
+    errors.push('DB_FILE i REGISTRY_DB_FILE muszą wskazywać różne pliki.');
+  }
+  return errors;
+}
 
 /**
  * Znacznik wersji zasobów statycznych — doklejany do URL-i CSS/JS jako `?v=`.

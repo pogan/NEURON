@@ -1,5 +1,6 @@
 import { config } from './config.js';
 import { logRequest } from './db.js';
+import { consume, recordRemote } from './quota.js';
 
 /** Cache tokenu w pamięci procesu (PM2 cluster: jeden token na worker). */
 let tokenCache = { value: null, expiresAt: 0 };
@@ -79,10 +80,12 @@ function baseUrlFor(api) {
  * Wykonuje żądanie do EUIPO. Ponawia raz po odświeżeniu tokenu na 401.
  * @param {'trademark'|'design'} api
  * @param {string} endpoint np. '/trademarks'
- * @param {object} opts { query, acceptLanguage, accept, raw }
+ * @param {object} opts { query, acceptLanguage, accept, raw, priority }
+ *   priority: 'interactive' (użytkownik czeka) | 'sync' | 'import' — patrz quota.js
  */
 export async function euipoRequest(api, endpoint, opts = {}) {
-  const { query = {}, acceptLanguage, accept = 'application/json', raw = false } = opts;
+  const { query = {}, acceptLanguage, accept = 'application/json', raw = false, priority = 'interactive' } = opts;
+  const source = api === 'design' ? 'euipo-design' : 'euipo-trademark';
 
   const url = new URL(baseUrlFor(api) + endpoint);
   for (const [key, value] of Object.entries(query)) {
@@ -96,6 +99,7 @@ export async function euipoRequest(api, endpoint, opts = {}) {
 
   while (true) {
     const token = await getAccessToken({ force: attempt > 0 });
+    consume(source, priority);
     const headers = {
       Authorization: `Bearer ${token}`,
       'X-IBM-Client-Id': config.euipo.clientId,
@@ -118,6 +122,7 @@ export async function euipoRequest(api, endpoint, opts = {}) {
     reset: res.headers.get('X-RateLimit-Reset'),
     retryAfter: res.headers.get('Retry-After'),
   };
+  recordRemote(source, rateLimit);
 
   if (raw) {
     if (!res.ok) {

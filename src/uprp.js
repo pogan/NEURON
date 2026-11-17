@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { config } from './config.js';
 import { logRequest } from './db.js';
+import { consume } from './quota.js';
 
 /**
  * Klient API UPRP (PUEUP, moduł e-Wyszukiwarka).
@@ -93,10 +94,10 @@ export function parseXml(xml) {
  * Wykonuje żądanie do e-Wyszukiwarki UPRP. Ponawia raz po odświeżeniu tokenu na 401.
  * Odpowiedzi XML są parsowane do JSON; surowy XML wraca w polu `xml`.
  * @param {string} endpoint np. '/pwp-types'
- * @param {object} opts { method, query, body }
+ * @param {object} opts { method, query, body, priority } — priority jak w quota.js
  */
 export async function uprpRequest(endpoint, opts = {}) {
-  const { method = 'GET', query = {}, body } = opts;
+  const { method = 'GET', query = {}, body, priority = 'interactive' } = opts;
 
   const url = new URL(config.uprp.apiBase + endpoint);
   for (const [key, value] of Object.entries(query)) {
@@ -110,6 +111,7 @@ export async function uprpRequest(endpoint, opts = {}) {
 
   while (true) {
     const token = await getUprpToken({ force: attempt > 0 });
+    consume('uprp', priority);
     res = await fetch(url, {
       method,
       headers: {

@@ -62,7 +62,7 @@ export function buildAlertQuery(api, pattern) {
  * limit MAX_PAGES stron). Dzięki sortowaniu malejącemu nowe zgłoszenia zawsze trafiają
  * na pierwszą stronę, nawet gdy wynik jest przycięty.
  */
-export async function fetchAllRecords(api, query) {
+export async function fetchAllRecords(api, query, { priority = 'interactive' } = {}) {
   const def = API_DEF[api];
   const items = [];
   let totalElements = 0;
@@ -71,6 +71,7 @@ export async function fetchAllRecords(api, query) {
   for (let page = 0; page < Math.min(totalPages, MAX_PAGES); page += 1) {
     const result = await euipoRequest(api, def.endpoint, {
       query: { query, size: PAGE_SIZE, page, sort: def.sort },
+      priority,
     });
     totalElements = result.data.totalElements ?? 0;
     totalPages = result.data.totalPages ?? 1;
@@ -100,7 +101,7 @@ export async function createAlert({ api, name, pattern }) {
   const alert = queries.getAlert.get(info.lastInsertRowid);
 
   try {
-    const result = await runAlertCheck(alert, { seed: true });
+    const result = await runAlertCheck(alert);
     return { alert: queries.getAlert.get(alert.id), ...result };
   } catch (err) {
     // Seed się nie udał (np. brak autoryzacji) — alert zostaje, scheduler spróbuje ponownie
@@ -110,14 +111,18 @@ export async function createAlert({ api, name, pattern }) {
 
 /**
  * Jedno sprawdzenie alertu: pobiera aktualny stan, zapisuje nieznane rekordy.
+ * Dopóki alert nie ma udanego stanu początkowego (seeded_at), każde sprawdzenie jest seedem —
+ * inaczej po nieudanym seedzie wszystkie istniejące rekordy zostałyby oznaczone jako NOWE.
  * @param {object} alert wiersz z tabeli alert
- * @param {{seed?: boolean}} opts seed=true oznacza stan początkowy (is_new=0)
+ * @param {{priority?: string}} opts priorytet zapytań (patrz quota.js)
  */
-export async function runAlertCheck(alert, { seed = false } = {}) {
+export async function runAlertCheck(alert, { priority = 'interactive' } = {}) {
+  const seed = !alert.seeded_at;
   try {
     const { items, totalElements, truncated, idField } = await fetchAllRecords(
       alert.api,
-      alert.query
+      alert.query,
+      { priority }
     );
 
     const known = new Set(
@@ -140,6 +145,7 @@ export async function runAlertCheck(alert, { seed = false } = {}) {
       }
     });
     insertMany();
+    if (seed) queries.markAlertSeeded.run(alert.id);
 
     queries.updateAlertCheck.run({
       id: alert.id,
@@ -190,7 +196,7 @@ async function tick() {
     const due = queries.dueAlerts.all(config.euipo.environment);
     for (const alert of due) {
       try {
-        const result = await runAlertCheck(alert);
+        const result = await runAlertCheck(alert, { priority: 'sync' });
         console.log(
           `[NEURON] Alert #${alert.id} „${alert.name}": ${result.found} rekordów, nowych: ${result.newRecords.length}`
         );

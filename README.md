@@ -210,6 +210,7 @@ npm install
 cp .env.example .env      # set ENV and the credential pair for that environment
 npm start                 # production
 npm run dev                # auto-restart on file change
+npm test                   # node --test, no network (fetch is stubbed)
 ```
 
 ### PM2
