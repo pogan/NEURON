@@ -65,6 +65,7 @@ router.use('/api', apiRouter);
 
 const nav = [
   { href: '/', icon: 'bi-house', label: 'Start' },
+  { href: '/sprawdz', icon: 'bi-search-heart', label: 'Sprawdź nazwę' },
   { href: '/trademarks', icon: 'bi-tag', label: 'Znaki towarowe' },
   { href: '/designs', icon: 'bi-bounding-box', label: 'Wzory' },
   { href: '/uprp', icon: 'bi-bank', label: 'UPRP' },
@@ -90,6 +91,10 @@ router.get('/', (_req, res) => {
     apiHost: config.euipo.apiHost,
     tokenUrl: config.euipo.tokenUrl,
   });
+});
+
+router.get('/sprawdz', (_req, res) => {
+  render(res, 'sprawdz', { page: '/sprawdz', title: 'Sprawdź nazwę' });
 });
 
 router.get('/trademarks', (_req, res) => {

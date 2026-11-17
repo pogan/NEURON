@@ -61,6 +61,13 @@ export const config = {
   dbFile,
   // Kopia rejestrów EUIPO/UPRP — da się ją odbudować z API, więc może leżeć poza kopią zapasową.
   registryDbFile: process.env.REGISTRY_DB_FILE || path.join(path.dirname(dbFile), 'registry.sqlite'),
+  // Lokalna kopia rejestrów: zadania importu i odświeżania działają tylko przy REGISTRY_SYNC=true
+  // (nie w CI ani w testach). IMPORT_EUIPO_FROM ogranicza import do zgłoszeń od tej daty —
+  // na podglądzie krótszy okres, żeby nie zużywać limitu wspólnego z produkcją.
+  registry: {
+    sync: String(process.env.REGISTRY_SYNC || '').toLowerCase() === 'true',
+    importEuipoFrom: process.env.IMPORT_EUIPO_FROM || '1996-01-01',
+  },
   // Dzienne limity zapytań (doba UTC). Wartości z nagłówków X-RateLimit EUIPO (2026-11);
   // UPRP nie podaje limitu, więc ostrożne założenie do czasu pomiaru.
   quota: {
@@ -105,6 +112,9 @@ export function validateConfig(cfg = config) {
   if (!Number.isInteger(cfg.port) || cfg.port < 1 || cfg.port > 65535) errors.push('PORT musi być liczbą 1–65535.');
   for (const [source, limit] of Object.entries(cfg.quota)) {
     if (!Number.isInteger(limit) || limit < 1) errors.push(`Limit zapytań dla ${source} musi być dodatnią liczbą całkowitą.`);
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(cfg.registry.importEuipoFrom)) {
+    errors.push('IMPORT_EUIPO_FROM musi mieć format RRRR-MM-DD.');
   }
   if (path.resolve(cfg.dbFile) === path.resolve(cfg.registryDbFile)) {
     errors.push('DB_FILE i REGISTRY_DB_FILE muszą wskazywać różne pliki.');

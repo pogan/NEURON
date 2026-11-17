@@ -26,7 +26,7 @@ legacy.close();
 const { db } = await import('../src/db.js');
 
 test('baza prototypu dostaje migracje i zachowuje dane', () => {
-  assert.equal(db.pragma('user_version', { simple: true }), 2);
+  assert.equal(db.pragma('user_version', { simple: true }), 3);
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM request_log').get().n, 1);
   const alerts = db.prepare('SELECT id, seeded_at FROM alert ORDER BY id').all();
   assert.equal(alerts[0].seeded_at, '2026-07-24 15:01:57');
