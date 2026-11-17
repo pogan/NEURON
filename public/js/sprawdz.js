@@ -71,17 +71,42 @@ function trademarksHtml({ registry, matches }) {
     <p class="small text-secondary mb-0">${coverage}</p>`;
 }
 
+function companiesHtml({ indexed, matches }) {
+  const coverage = indexed
+    ? `Indeks obejmuje ${indexed.toLocaleString('pl-PL')} podmiotów z KRS i jest jeszcze uzupełniany.
+       Nie ma w nim jednoosobowych firm z CEIDG.`
+    : 'Indeks nazw z KRS jest jeszcze pusty — budowa trwa.';
+  if (!matches.length) {
+    return `<p class="mb-2">Nie znaleźliśmy spółek ani organizacji z tą nazwą.</p>
+      <p class="small text-secondary mb-0">${coverage}</p>`;
+  }
+  const items = matches.map((c) => `<li class="py-2 border-bottom">
+      <strong>${escapeHtml(c.name)}</strong>
+      <div class="small text-secondary">
+        ${escapeHtml(c.legalForm || '')}${c.city ? ` · ${escapeHtml(c.city)}` : ''}
+        · KRS <a class="font-mono" href="https://wyszukiwarka-krs.ms.gov.pl/" target="_blank"
+          rel="noopener noreferrer">${escapeHtml(c.krs)}</a>
+      </div>
+    </li>`);
+  return `<ul class="list-unstyled mb-2">${items.join('')}</ul>
+    <p class="small text-secondary mb-0">${coverage}</p>`;
+}
+
 function render(data) {
   result.innerHTML = `
     <div class="row g-4">
-      <div class="col-lg-6">
-        <section class="nrn-panel h-100">
+      <div class="col-lg-6 vstack gap-4">
+        <section class="nrn-panel">
           <h2 class="h5 mb-3"><i class="bi bi-shield-check me-1"></i>Znaki towarowe</h2>
           ${trademarksHtml(data.trademarks)}
           <div class="alert alert-info small mt-3 mb-0">
             Wolna domena to nie wszystko. Czy nazwa nie narusza cudzego znaku w UE albo w Polsce,
             pokaże pełne badanie nazwy (wkrótce).
           </div>
+        </section>
+        <section class="nrn-panel">
+          <h2 class="h5 mb-3"><i class="bi bi-building me-1"></i>Firmy w KRS</h2>
+          ${companiesHtml(data.companies)}
         </section>
       </div>
       <div class="col-lg-6 vstack gap-4">

@@ -67,6 +67,11 @@ export const config = {
   registry: {
     sync: String(process.env.REGISTRY_SYNC || '').toLowerCase() === 'true',
     importEuipoFrom: process.env.IMPORT_EUIPO_FROM || '1996-01-01',
+    importUprpFrom: process.env.IMPORT_UPRP_FROM || '1900-01-01',
+    // Indeks nazw podmiotów z KRS: dzienny biuletyn zmian od tej daty (domyślnie od dnia pierwszego uruchomienia).
+    krsFrom: process.env.KRS_FROM || '',
+    // Pełne przejście po numerach KRS (ok. 1,3 mln zapytań) — tylko po decyzji Karola.
+    krsBackfill: String(process.env.KRS_BACKFILL || '').toLowerCase() === 'true',
   },
   // Dzienne limity zapytań (doba UTC). Wartości z nagłówków X-RateLimit EUIPO (2026-11);
   // UPRP nie podaje limitu, więc ostrożne założenie do czasu pomiaru.
@@ -74,6 +79,8 @@ export const config = {
     'euipo-trademark': int('QUOTA_EUIPO_TRADEMARK', 6000),
     'euipo-design': int('QUOTA_EUIPO_DESIGN', 35000),
     uprp: int('QUOTA_UPRP', 5000),
+    // KRS nie publikuje limitu; ostrożnie, zapytania i tak idą po kolei.
+    krs: int('QUOTA_KRS', 10000),
   },
   // Brama hasła. Pusty WEBSITE_PASS = strona publiczna.
   auth: {
@@ -99,6 +106,10 @@ export const config = {
     apiKey: process.env.UPRP_API_KEY || process.env.UPRP_API_SECRET,
     tokenUrl: process.env.UPRP_TOKEN_URL || 'https://api.uprp.gov.pl/cmuia/api/external/auth/token',
     apiBase: process.env.UPRP_API_BASE || 'https://api.uprp.gov.pl/ewyszukiwarka/api/external',
+  },
+  // Otwarte API KRS (Ministerstwo Sprawiedliwości) — bez klucza.
+  krs: {
+    apiBase: process.env.KRS_API_BASE || 'https://api-krs.ms.gov.pl/api',
   },
 };
 
