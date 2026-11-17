@@ -6,12 +6,16 @@ import { APIS } from '../metadata.js';
 import { config } from '../config.js';
 import { createAlert, runAlertCheck, buildAlertQuery, AlertError } from '../monitor.js';
 import { uprpRouter } from './uprp.js';
+import { QuotaError } from '../quota.js';
 
 export const apiRouter = Router();
 
 apiRouter.use('/uprp', uprpRouter);
 
 function fail(res, err) {
+  if (err instanceof QuotaError) {
+    return res.status(429).json({ error: err.message });
+  }
   if (err instanceof AlertError) {
     return res.status(err.status || 400).json({ error: err.message });
   }

@@ -1,10 +1,14 @@
 import { Router } from 'express';
 import { uprpRequest, getUprpToken, uprpTokenInfo, UprpError } from '../uprp.js';
 import { UPRP } from '../uprp-meta.js';
+import { QuotaError } from '../quota.js';
 
 export const uprpRouter = Router();
 
 function fail(res, err) {
+  if (err instanceof QuotaError) {
+    return res.status(429).json({ error: err.message });
+  }
   if (err instanceof UprpError) {
     return res.status(err.status || 502).json({
       error: err.message,

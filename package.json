@@ -5,17 +5,18 @@
   "type": "module",
   "main": "src/server.js",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
-    "express": "^4.21.2",
+    "express": "^5.3.0",
     "fast-xml-parser": "^5.10.1",
     "vamude-kit": "https://github.com/pogan/vamude-kit/archive/refs/tags/v1.0.0.tar.gz"
   },
