@@ -27,3 +27,16 @@ test('strona „Sprawdź nazwę” i walidacja zapytania', async () => {
   assert.equal((await fetch(`${base}/sprawdz`)).status, 200);
   assert.equal((await fetch(`${base}/api/check?name=`)).status, 400);
 });
+
+test('strona „Badanie nazwy” z branżami i walidacja /api/badanie', async () => {
+  const res = await fetch(`${base}/badanie`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  const data = JSON.parse(html.match(/<script type="application\/json" id="industriesData">([\s\S]*?)<\/script>/)[1]);
+  assert.ok(data.industries.length >= 30);
+  assert.equal(data.classNames[25], 'odzież i obuwie');
+  assert.equal((await fetch(`${base}/api/badanie?name=`)).status, 400);
+  const ok = await (await fetch(`${base}/api/badanie?name=Neuron&classes=9,42`)).json();
+  assert.equal(ok.verdict.level, 'low'); // pusta kopia rejestrów w teście
+  assert.deepEqual(ok.classes, [9, 42]);
+});

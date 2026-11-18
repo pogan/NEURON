@@ -4,6 +4,7 @@ import { config, assertCredentials, assetVersion, ROOT } from './config.js';
 import { apiRouter } from './routes/api.js';
 import { APIS } from './metadata.js';
 import { UPRP } from './uprp-meta.js';
+import { INDUSTRIES, CLASS_NAMES } from './industries.js';
 import { db, queries } from './db.js';
 import { registryDb } from './registry-db.js';
 import { installAuthGate, authEnabled } from './auth.js';
@@ -65,6 +66,7 @@ router.use('/api', apiRouter);
 
 const nav = [
   { href: '/', icon: 'bi-house', label: 'Start' },
+  { href: '/badanie', icon: 'bi-shield-check', label: 'Badanie nazwy' },
   { href: '/sprawdz', icon: 'bi-search-heart', label: 'Sprawdź nazwę' },
   { href: '/trademarks', icon: 'bi-tag', label: 'Znaki towarowe' },
   { href: '/designs', icon: 'bi-bounding-box', label: 'Wzory' },
@@ -90,6 +92,14 @@ router.get('/', (_req, res) => {
     title: 'Start',
     apiHost: config.euipo.apiHost,
     tokenUrl: config.euipo.tokenUrl,
+  });
+});
+
+router.get('/badanie', (_req, res) => {
+  render(res, 'badanie', {
+    page: '/badanie',
+    title: 'Badanie nazwy',
+    industriesJson: JSON.stringify({ industries: INDUSTRIES, classNames: CLASS_NAMES }),
   });
 });
 
