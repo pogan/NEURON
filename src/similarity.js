@@ -165,7 +165,10 @@ export function compareNames(q, c) {
     // Całe słowa („TWOJA MLECZNA DROGA”) liczą się mocniej niż fragment wyrazu („ARKOS” w „MARKOSKOP”).
     const asWord = ` ${longer.name} `.includes(` ${shorter.name} `);
     const ratio = shorter.compact.length / longer.compact.length;
-    contains = asWord ? 0.85 + 0.1 * ratio : 0.6 + 0.2 * ratio;
+    // Badana nazwa w całości w cudzym znaku („NEURON” → „AWS NEURON”) waży więcej niż cudzy znak
+    // będący jednym słowem badanej nazwy („LEŚNA” w „LEŚNA ŚWIECA”) — to drugie to ostrzeżenie, nie wysokie ryzyko.
+    const oursInside = shorter === q;
+    contains = asWord ? (oursInside ? 0.85 : 0.75) + 0.1 * ratio : 0.6 + 0.2 * ratio;
   } else {
     const qWords = q.name.split(' ').filter((w) => w.length >= 4);
     const cWords = new Set(c.name.split(' '));
