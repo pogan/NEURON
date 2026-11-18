@@ -8,6 +8,7 @@ import { createAlert, runAlertCheck, buildAlertQuery, AlertError } from '../moni
 import { uprpRouter } from './uprp.js';
 import { QuotaError } from '../quota.js';
 import { checkName } from '../namecheck.js';
+import { examineName } from '../badanie.js';
 
 export const apiRouter = Router();
 
@@ -269,6 +270,23 @@ apiRouter.delete('/alerts/:id', (req, res) => {
 });
 
 /* ------------------------------------------------- sprawdź nazwę wszędzie */
+
+/**
+ * Badanie nazwy w kopii rejestrów: /api/badanie?name=Leśna Świeca&classes=4,35
+ * Bez klas ocena pomija branżę (każdy podobny znak liczy się jak z tej samej klasy).
+ */
+apiRouter.get('/badanie', (req, res) => {
+  try {
+    const name = String(req.query.name || '').trim().slice(0, 100);
+    if (!name) return res.status(400).json({ error: 'Podaj nazwę do sprawdzenia.' });
+    const classes = String(req.query.classes || '').split(/[\s,;]+/).filter(Boolean).map(Number);
+    const result = examineName(name, { classes });
+    if (!result) return res.status(400).json({ error: 'Nazwa musi zawierać litery albo cyfry.' });
+    res.json(result);
+  } catch (err) {
+    fail(res, err);
+  }
+});
 
 apiRouter.get('/check', async (req, res) => {
   const name = String(req.query.name || '').trim();

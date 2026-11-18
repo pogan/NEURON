@@ -14,6 +14,7 @@ const { startJobRunner } = await import('./jobs.js');
 const { ensureEuipoJobs } = await import('./sync-euipo.js');
 const { ensureUprpJobs } = await import('./sync-uprp.js');
 const { ensureKrsJobs } = await import('./sync-krs.js');
+const { ensureSimJobs } = await import('./sync-sim.js');
 
 app.listen(config.port, config.host, () => {
   console.log(`[NEURON] ${version.label} nasłuchuje na http://${config.host}:${config.port}${config.basePath}`);
@@ -21,5 +22,6 @@ app.listen(config.port, config.host, () => {
   ensureEuipoJobs();
   ensureUprpJobs();
   ensureKrsJobs();
+  ensureSimJobs();
   startJobRunner();
 });
