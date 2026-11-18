@@ -59,8 +59,11 @@ const PAIRS = [
   ['Delta', 'Delfin', 0.6, 0.75],
   ['Sprawdź nazwę', 'SportSense', 0, 0.6],
   ['Mleczna Droga', 'TWOJA MLECZNA DROGA', 0.85, 0.95],
+  ['Mleczna Droga', 'MLECZNA', 0.75, 0.84],
   ['Markoskop', 'ARKOS', 0.6, 0.74],
   ['Leśna Świeca', 'ŚWIECA CARITAS', 0.55, 0.65], // jedno wspólne, opisowe słowo
+  ['Leśna Świeca', 'LEŚNA', 0.75, 0.84], // cudzy znak to jedno słowo naszej nazwy: ostrzeżenie
+  ['Neuron', 'AWS NEURON', 0.85, 0.95], // nasza nazwa w całości w cudzym znaku: wysokie
 ];
 
 for (const [a, b, min, max] of PAIRS) {
