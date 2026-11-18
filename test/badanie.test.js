@@ -39,8 +39,10 @@ test('badanie: ten sam znak w tej samej klasie = wysokie ryzyko, z powodami', ()
   assert.equal(r.verdict.level, 'high');
   assert.equal(r.matches[0].number, '1');
   assert.deepEqual(r.matches[0].reasons.map((x) => x.code), ['identical', 'sameClass']);
+  assert.equal(r.matches[0].group, 'main');
   const expired = r.matches.find((m) => m.number === '3');
   assert.equal(expired.state, 'inactive');
+  assert.equal(expired.group, 'inactive');
   assert.ok(expired.risk < 0.1);
   const reordered = r.matches.find((m) => m.number === '6');
   assert.ok(reordered.reasons.some((x) => x.code === 'words'));
@@ -52,6 +54,8 @@ test('badanie: inna branża obniża ryzyko', () => {
   const r = examineName('Leśna Świeca', { classes: [42], today: '2026-11-18' });
   assert.equal(r.verdict.level, 'low');
   assert.equal(r.matches[0].reasons.at(-1).code, 'otherClass');
+  assert.equal(r.matches[0].group, 'other');
+  assert.deepEqual(r.groups, { main: 0, other: 3, inactive: 1 });
 });
 
 test('indeks podobieństwa dla znaków sprzed migracji (sim-index)', () => {

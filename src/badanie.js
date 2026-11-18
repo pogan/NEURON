@@ -178,7 +178,10 @@ export function scoreTrademark(keys, classes, tm, today) {
   if (st.state === 'pending' || st.state === 'inactive') reasons.push(st.state);
   if (feature < 1) reasons.push('figurative');
 
+  // Grupy na ekranie wyniku: najważniejsze, inne branże (zwinięte), nieaktywne (zwinięte).
+  const group = st.state === 'inactive' ? 'inactive' : cls.reason === 'otherClass' ? 'other' : 'main';
   return {
+    group,
     source: tm.source,
     number: tm.number,
     name: tm.name,
@@ -220,11 +223,9 @@ export function examineName(rawName, { classes = [], limit = 30, today } = {}) {
     normalized: keys.name,
     classes: wanted,
     verdict: { ...verdictFor(top), topRisk: top, classesGiven: wanted.length > 0 },
-    groups: {
-      main: scored.filter((m) => m.state !== 'inactive' && m.risk >= 0.3).length,
-      inactive: scored.filter((m) => m.state === 'inactive').length,
-    },
-    matches: scored.slice(0, limit),
+    groups: Object.fromEntries(['main', 'other', 'inactive'].map((g) => [g, scored.filter((m) => m.group === g).length])),
+    // Limit osobno w każdej grupie, żeby nieaktywne nie wypierały aktywnych z listy.
+    matches: ['main', 'other', 'inactive'].flatMap((g) => scored.filter((m) => m.group === g).slice(0, limit)),
     coverage: {
       registry: trademarkCounts(),
       candidates: ids.length,

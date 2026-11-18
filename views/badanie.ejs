@@ -1,0 +1,48 @@
+<%- include('partials/head') %>
+
+<div class="mb-4 d-flex justify-content-between align-items-start gap-3 flex-wrap">
+  <div>
+    <h1 class="h3 mb-1">Badanie nazwy</h1>
+    <p class="text-secondary mb-0">Czy ktoś już chroni podobną nazwę w Unii Europejskiej albo w Polsce?</p>
+  </div>
+  <div class="form-check form-switch small mt-1">
+    <input class="form-check-input" type="checkbox" role="switch" id="proMode">
+    <label class="form-check-label" for="proMode">Tryb dla profesjonalistów</label>
+  </div>
+</div>
+
+<form id="examForm" class="nrn-panel mb-4" role="search">
+  <label class="form-label fw-semibold" for="examName">Nazwa</label>
+  <input type="text" class="form-control form-control-lg mb-3" id="examName" required maxlength="100"
+         placeholder="np. Leśna Świeca" autocomplete="off">
+
+  <label class="form-label fw-semibold" for="examWhat">Czym się zajmujesz?</label>
+  <input type="text" class="form-control mb-2" id="examWhat" maxlength="200" autocomplete="off"
+         placeholder="Wystarczy kilka słów, np. „ręcznie robione świece”">
+  <div class="small text-secondary mb-2">Zaznacz jedną lub kilka branż. Podpowiadamy je na podstawie opisu.</div>
+  <div class="nrn-tiles mb-3" id="examTiles" role="group" aria-label="Branże"></div>
+
+  <div class="mb-3 d-none" id="proClasses">
+    <label class="form-label fw-semibold" for="examClasses">Klasy nicejskie</label>
+    <input type="text" class="form-control font-mono" id="examClasses" placeholder="np. 4, 35" autocomplete="off">
+    <div class="form-text">Wpisane klasy zastępują branże zaznaczone wyżej.</div>
+  </div>
+
+  <div class="d-flex flex-column flex-sm-row gap-2 align-items-sm-center">
+    <button type="submit" class="btn btn-primary btn-lg" id="examSubmit">
+      <i class="bi bi-search me-1"></i> Sprawdź nazwę za darmo
+    </button>
+    <span class="small text-secondary" id="examSummary"></span>
+  </div>
+</form>
+
+<div id="examResult" aria-live="polite"></div>
+
+<p class="small text-secondary mt-4 mb-0">
+  To automatyczna analiza, nie porada prawna. Nie obejmuje znaków niezarejestrowanych ani nazw firm.
+</p>
+
+<script type="application/json" id="industriesData"><%- industriesJson %></script>
+<script type="module" src="<%= base %>/static/js/badanie.js?v=<%= v %>"></script>
+
+<%- include('partials/foot') %>
