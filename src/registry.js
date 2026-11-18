@@ -1,5 +1,6 @@
 import { registryDb } from './registry-db.js';
 import { normalizeName } from './names.js';
+import { nameKeys } from './similarity.js';
 
 /**
  * Zapis i odczyt lokalnej kopii rejestrów (tabele trademark i sync_state w registry.sqlite).
@@ -17,7 +18,10 @@ const statements = {
       applicants = excluded.applicants, application_date = excluded.application_date,
       registration_date = excluded.registration_date, expiry_date = excluded.expiry_date,
       data = excluded.data, synced_at = datetime('now')
+    RETURNING id
   `),
+  simDelete: registryDb.prepare(`DELETE FROM trademark_sim WHERE rowid = ?`),
+  simInsert: registryDb.prepare(`INSERT INTO trademark_sim (rowid, compact, pl, en) VALUES (?, ?, ?, ?)`),
   getState: registryDb.prepare(`SELECT * FROM sync_state WHERE source = ?`),
   setState: registryDb.prepare(`
     INSERT INTO sync_state (source, phase, cursor, records, last_sync_at, last_error, updated_at)
@@ -44,13 +48,21 @@ export function niceColumn(classes) {
 
 /** @param {object} tm znak w formacie wspólnym dla rejestrów (patrz euipoToTrademark) */
 export function upsertTrademark(tm) {
-  statements.upsert.run({
+  const { id } = statements.upsert.get({
     ...tm,
     name_norm: normalizeName(tm.name),
     nice_classes: niceColumn(tm.nice_classes),
     applicants: JSON.stringify(tm.applicants || []),
     data: JSON.stringify(tm.data),
   });
+  indexSimilarity(id, tm.name);
+}
+
+/** Wpis znaku w indeksie podobieństwa (znaki bez elementu słownego pomijamy). */
+export function indexSimilarity(id, name) {
+  statements.simDelete.run(id);
+  const keys = nameKeys(name);
+  if (keys.compact) statements.simInsert.run(id, keys.compact, keys.pl, keys.en);
 }
 
 export const upsertTrademarks = registryDb.transaction((list) => {

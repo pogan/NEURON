@@ -104,6 +104,17 @@ const migrations = [
       END;
     `);
   },
+
+  // 4: indeks silnika podobieństwa — nazwa sklejona i klucze fonetyczne (PL, EN) jako trigramy.
+  // Bez kopii treści (klucze liczy similarity.js); wiersze dopisuje upsertTrademark,
+  // a znaki sprzed tej migracji uzupełnia zadanie sim-index (sync-sim.js).
+  (d) => {
+    d.exec(`
+      CREATE VIRTUAL TABLE trademark_sim USING fts5(
+        compact, pl, en, content = '', contentless_delete = 1, tokenize = 'trigram'
+      );
+    `);
+  },
 ];
 
 migrate(registryDb, migrations);
